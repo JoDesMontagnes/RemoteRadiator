@@ -10,6 +10,7 @@ Description : Exemple d'un buffer tournant sous STM32.
 
 #include "stm32f10x.h"
 #include <stdio.h>
+#include <string.h>
 
 //====================================================================
 #if !defined HSE_VALUE
@@ -37,9 +38,8 @@ void usartSendUint32(USART_TypeDef *usart, uint32_t data);
 typedef struct{
 	char data[MAX_USART_BUFF];
 	uint16_t readId;
-	uint16_t writeId;
-	BOOL turnDone;
-	BOOL dataAvailable; 
+	uint16_t id;
+	BOOL cmdAvailable; 
 }circularBuff_t;
 
 static circularBuff_t _usart1Buff;
@@ -61,28 +61,14 @@ int main(void){
 	
 	while(1){
 		
-		if(_usart1Buff.dataAvailable == TRUE){
-			if(_usart1Buff.turnDone == FALSE){
-				while(_usart1Buff.readId < _usart1Buff.writeId){
-					usartSendChar(USART1, _usart1Buff.data[_usart1Buff.readId]);
-					_usart1Buff.readId++;
-				}
-				_usart1Buff.dataAvailable = FALSE;
-			}else{
-				while(_usart1Buff.readId < MAX_USART_BUFF){
-					usartSendChar(USART1, _usart1Buff.data[_usart1Buff.readId]);
-					_usart1Buff.readId++;
-				}
-				_usart1Buff.readId = 0;
-				_usart1Buff.turnDone = FALSE;
-				while(_usart1Buff.readId < _usart1Buff.writeId){
-					usartSendChar(USART1, _usart1Buff.data[_usart1Buff.readId]);
-					_usart1Buff.readId++;
-				}
-				_usart1Buff.dataAvailable = FALSE;
+		if(_usart1Buff.cmdAvailable == TRUE){
+			if(strcmp(_usart1Buff.data, "help") == 0){
+				usartSendString(USART1, "ca marche\n\r");
 			}
+			
+			_usart1Buff.cmdAvailable = FALSE;
 		}
-		for(i=0;i<1000000;i++);
+		
 	}
 	
 	
@@ -110,9 +96,8 @@ void initSystem(void){
 
 void initApp(void){
 	_usart1Buff.readId = 0;
-	_usart1Buff.writeId = 1;
-	_usart1Buff.turnDone = FALSE;
-	_usart1Buff.dataAvailable = FALSE;
+	_usart1Buff.id = 1;
+	_usart1Buff.cmdAvailable = FALSE;
 }
 
 void initUSART1(void){
@@ -174,17 +159,18 @@ void  usartSendUint32(USART_TypeDef *usart, uint32_t data){
 
 void USART1_IRQHandler(void){
 	if(USART_GetITStatus(USART1, USART_IT_RXNE) == SET){
-		if((_usart1Buff.turnDone == FALSE && _usart1Buff.writeId >= _usart1Buff.readId) || (_usart1Buff.turnDone == TRUE && _usart1Buff.writeId < _usart1Buff.readId-1)){
-			_usart1Buff.data[_usart1Buff.writeId] = USART_ReceiveData(USART1);
-			if(_usart1Buff.writeId < MAX_USART_BUFF){
-				_usart1Buff.writeId++;
+		if(_usart1Buff.cmdAvailable == FALSE){
+			char c = USART_ReceiveData(USART1);
+			if(c != '\n'){
+				_usart1Buff.data[_usart1Buff.id] = c;
+				if(_usart1Buff.id < MAX_USART_BUFF)
+					_usart1Buff.id++;
+				else
+					_usart1Buff.id = 0;
 			}else{
-				_usart1Buff.writeId = 0;
-				_usart1Buff.turnDone = TRUE;
+				_usart1Buff.cmdAvailable = TRUE;
+			  _usart1Buff.id = 0;				
 			}
-			_usart1Buff.dataAvailable = TRUE;
-		}else{
-			
 		}
 		USART_ClearITPendingBit(USART1, USART_IT_RXNE);
 	}
