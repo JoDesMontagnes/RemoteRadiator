@@ -71,6 +71,9 @@ int main(void){
 				case 'h':
 					usartSendString(USART1, "\r\nh : Affiche l'aide");
 				break;
+				default:
+					usartSendString(USART2, _usart1Buff.data);
+				break;
 			}
 			
 			clearBuffer(&_usart1Buff, MAX_USART_BUFF);
@@ -176,7 +179,7 @@ void initUSART2(void){
 	gpioaInitStruct.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOA, &gpioaInitStruct);
 
-	USART_Cmd(USART1, ENABLE);
+	USART_Cmd(USART2, ENABLE);
 	//Config
 	usart2InitStruct.USART_BaudRate = 115200;
 	usart2InitStruct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
