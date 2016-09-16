@@ -33,6 +33,7 @@ typedef struct{
 void initSystem(void);
 void initApp(void);
 void initUSART1(void);
+void initUSART2(void);
 
 void usartSendChar(USART_TypeDef *usart, char c);
 void usartSendString(USART_TypeDef *usart, char *s);
@@ -43,6 +44,7 @@ void clearBuffer(circularBuff_t *buff,unsigned char size);
 
 
 static circularBuff_t _usart1Buff;
+static circularBuff_t _usart2Buff;
 
 int main(void){
 	int i;
@@ -51,12 +53,15 @@ int main(void){
 	initSystem();
 	initApp();
 	initUSART1();
+	initUSART2();
 	
 	usartSendString(USART1, "Init ... done\r\n");
 	RCC_GetClocksFreq(&clk);
 	usartSendString(USART1, "System frequency : ");
 	usartSendUint32(USART1, clk.SYSCLK_Frequency);
 	usartSendString(USART1, "\r\n");
+	
+	
 	
 	
 	while(1){
@@ -66,10 +71,14 @@ int main(void){
 				case 'h':
 					usartSendString(USART1, "\r\nh : Affiche l'aide");
 				break;
-				
 			}
 			
 			clearBuffer(&_usart1Buff, MAX_USART_BUFF);
+		}
+		
+		if(_usart2Buff.cmdAvailable == TRUE){
+			usartSendString(USART1, _usart2Buff.data);
+			clearBuffer(_usart2Buff.data, MAX_USART_BUFF);
 		}
 		
 	}
@@ -102,6 +111,12 @@ void initApp(void){
 	_usart1Buff.id = 0;
 	_usart1Buff.cmdAvailable = FALSE;
   clearBuffer(&_usart1Buff, MAX_USART_BUFF);
+
+	
+	_usart2Buff.readId = 0;
+	_usart2Buff.id = 0;
+	_usart2Buff.cmdAvailable = FALSE;
+  clearBuffer(&_usart2Buff.data, MAX_USART_BUFF);
 }
 
 void initUSART1(void){
@@ -139,6 +154,43 @@ void initUSART1(void){
 	//Autorisation des Interruptions
 	USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
 	NVIC_EnableIRQ(USART1_IRQn);
+}
+
+void initUSART2(void){
+	USART_InitTypeDef usart2InitStruct;
+	GPIO_InitTypeDef gpioaInitStruct;
+	
+	//On active la clock sur le périphérique
+	//A faire avant la config
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1 | RCC_APB2Periph_GPIOA | RCC_APB2Periph_AFIO, ENABLE);
+	
+	//Configuration de Tx
+	gpioaInitStruct.GPIO_Pin = GPIO_Pin_2;
+	gpioaInitStruct.GPIO_Mode = GPIO_Mode_AF_PP;
+	gpioaInitStruct.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOA, &gpioaInitStruct);
+	
+	//Configuration de RX
+	gpioaInitStruct.GPIO_Pin = GPIO_Pin_3;
+	gpioaInitStruct.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+	gpioaInitStruct.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOA, &gpioaInitStruct);
+
+	USART_Cmd(USART1, ENABLE);
+	//Config
+	usart2InitStruct.USART_BaudRate = 115200;
+	usart2InitStruct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+	usart2InitStruct.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+	usart2InitStruct.USART_Parity = USART_Parity_No;
+	usart2InitStruct.USART_StopBits = USART_StopBits_1;
+	usart2InitStruct.USART_WordLength = USART_WordLength_8b;
+
+	
+	USART_Init(USART2, &usart2InitStruct);
+	
+	//Autorisation des Interruptions
+	USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
+	NVIC_EnableIRQ(USART2_IRQn);
 }
 
 
@@ -179,7 +231,20 @@ void USART1_IRQHandler(void){
 	}
 }
 
+<<<<<<< HEAD
 void clearBuffer(circularBuff_t *buff,unsigned char size){
+=======
+void USART2_IRQHandler(void){
+	if(USART_GetITStatus(USART2, USART_IT_RXNE) == SET){
+		
+		
+		
+		USART_ClearITPendingBit(USART2, USART_IT_RXNE);
+	}
+}
+
+void clearBuffer(char *b,unsigned char size){
+>>>>>>> esp8266
 	int i;
 	for(i=0;i<size;i++){
 		*(buff->data+i) = 0;
