@@ -28,6 +28,7 @@ typedef enum {FALSE, TRUE}BOOL;
 void initSystem(void);
 void initApp(void);
 void initUSART1(void);
+void initUSART2(void);
 
 void usartSendChar(USART_TypeDef *usart, char c);
 void usartSendString(USART_TypeDef *usart, char *s);
@@ -140,6 +141,43 @@ void initUSART1(void){
 	NVIC_EnableIRQ(USART1_IRQn);
 }
 
+void initUSART2(void){
+	USART_InitTypeDef usart2InitStruct;
+	GPIO_InitTypeDef gpioaInitStruct;
+	
+	//On active la clock sur le périphérique
+	//A faire avant la config
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1 | RCC_APB2Periph_GPIOA | RCC_APB2Periph_AFIO, ENABLE);
+	
+	//Configuration de Tx
+	gpioaInitStruct.GPIO_Pin = GPIO_Pin_2;
+	gpioaInitStruct.GPIO_Mode = GPIO_Mode_AF_PP;
+	gpioaInitStruct.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOA, &gpioaInitStruct);
+	
+	//Configuration de RX
+	gpioaInitStruct.GPIO_Pin = GPIO_Pin_3;
+	gpioaInitStruct.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+	gpioaInitStruct.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOA, &gpioaInitStruct);
+
+	USART_Cmd(USART1, ENABLE);
+	//Config
+	usart2InitStruct.USART_BaudRate = 115200;
+	usart2InitStruct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+	usart2InitStruct.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+	usart2InitStruct.USART_Parity = USART_Parity_No;
+	usart2InitStruct.USART_StopBits = USART_StopBits_1;
+	usart2InitStruct.USART_WordLength = USART_WordLength_8b;
+
+	
+	USART_Init(USART2, &usart2InitStruct);
+	
+	//Autorisation des Interruptions
+	USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
+	NVIC_EnableIRQ(USART2_IRQn);
+}
+
 
 void usartSendChar(USART_TypeDef *usart, char c){
 		while(USART_GetFlagStatus(usart, USART_FLAG_TXE) == RESET);
@@ -175,6 +213,15 @@ void USART1_IRQHandler(void){
 			}
 		}
 		USART_ClearITPendingBit(USART1, USART_IT_RXNE);
+	}
+}
+
+void USART2_IRQHandler(void){
+	if(USART_GetITStatus(USART2, USART_IT_RXNE) == SET){
+		
+		
+		
+		USART_ClearITPendingBit(USART2, USART_IT_RXNE);
 	}
 }
 
