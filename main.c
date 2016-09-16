@@ -80,6 +80,7 @@ int main(void){
 		}
 		
 		if(_usart2Buff.cmdAvailable == TRUE){
+			
 			usartSendString(USART1, _usart2Buff.data);
 			clearBuffer(&_usart2Buff, MAX_USART_BUFF);
 		}
@@ -226,6 +227,8 @@ void USART1_IRQHandler(void){
 				else
 					_usart1Buff.id = 0;
 			}else{
+				
+				_usart1Buff.data[_usart1Buff.id] = c;
 				_usart1Buff.cmdAvailable = TRUE;
 			  _usart1Buff.id = 0;				
 			}
@@ -236,8 +239,20 @@ void USART1_IRQHandler(void){
 
 void USART2_IRQHandler(void){
 	if(USART_GetITStatus(USART2, USART_IT_RXNE) == SET){
-		
-		
+		if(_usart2Buff.cmdAvailable == FALSE){
+			char c = USART_ReceiveData(USART2);
+			if(c != '\n'){
+				_usart2Buff.data[_usart2Buff.id] = c;
+				if(_usart2Buff.id < MAX_USART_BUFF)
+					_usart2Buff.id++;
+				else
+					_usart2Buff.id = 0;
+			}else{
+				_usart2Buff.data[_usart2Buff.id] = c;
+				_usart2Buff.cmdAvailable = TRUE;
+			  _usart2Buff.id = 0;				
+			}
+		}
 		
 		USART_ClearITPendingBit(USART2, USART_IT_RXNE);
 	}
