@@ -1,0 +1,9 @@
+--cpu Cortex-M3 --pd "__EVAL SETA 1" -g --apcs=interwork 
+-I "C:\Users\jordan\Documents\Sync\Mes documents\Workspace\Electronique\ARM\STM32 - Test\RTE"
+-I "C:\Users\jordan\Documents\Sync\Mes documents\Workspace\Electronique\ARM\STM32 - Test\RTE\Device\STM32F103C8"
+-I C:\Keil_v5\ARM\PACK\ARM\CMSIS\4.5.0\CMSIS\Include
+-I C:\Keil_v5\ARM\PACK\Keil\STM32F1xx_DFP\2.0.0\Device\Include
+-I C:\Keil_v5\ARM\PACK\Keil\STM32F1xx_DFP\2.0.0\Device\StdPeriph_Driver\inc
+-I C:\Keil_v5\ARM\PACK\Keil\STM32F1xx_DFP\2.0.0\RTE_Driver
+--pd "__UVISION_VERSION SETA 517" --pd "_RTE_ SETA 1" --pd "STM32F10X_MD SETA 1" --pd "STM32F10X_MD SETA 1"
+--list .\listings\startup_stm32f10x_md.lst --xref -o .\objects\startup_stm32f10x_md.o --depend .\objects\startup_stm32f10x_md.d "RTE\Device\STM32F103C8\startup_stm32f10x_md.s"
