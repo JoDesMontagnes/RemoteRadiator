@@ -43,7 +43,6 @@ typedef struct{
 }circularBuff_t;
 
 static circularBuff_t _usart1Buff;
-static BOOL _error = FALSE;
 
 int main(void){
 	int i;
@@ -186,8 +185,7 @@ void USART1_IRQHandler(void){
 			}
 			_usart1Buff.dataAvailable = TRUE;
 		}else{
-			_error = TRUE;
-			//usartSendString(USART1, "##### Caractere loupees ########\r\n");
+			
 		}
 		USART_ClearITPendingBit(USART1, USART_IT_RXNE);
 	}
