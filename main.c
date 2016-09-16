@@ -22,7 +22,12 @@ Description : Exemple d'un buffer tournant sous STM32.
 //====================================================================
 typedef enum {FALSE, TRUE}BOOL;
 
-
+typedef struct{
+	char data[MAX_USART_BUFF];
+	uint16_t readId;
+	uint16_t id;
+	BOOL cmdAvailable; 
+}circularBuff_t;
 
 //====================================================================
 void initSystem(void);
@@ -32,16 +37,10 @@ void initUSART1(void);
 void usartSendChar(USART_TypeDef *usart, char c);
 void usartSendString(USART_TypeDef *usart, char *s);
 void usartSendUint32(USART_TypeDef *usart, uint32_t data);
-void clearBuffer(char *b,unsigned char size);
+void clearBuffer(circularBuff_t *buff,unsigned char size);
 
 //=====================================================================
 
-typedef struct{
-	char data[MAX_USART_BUFF];
-	uint16_t readId;
-	uint16_t id;
-	BOOL cmdAvailable; 
-}circularBuff_t;
 
 static circularBuff_t _usart1Buff;
 
@@ -70,7 +69,7 @@ int main(void){
 				
 			}
 			
-			
+			clearBuffer(
 		}
 		
 	}
