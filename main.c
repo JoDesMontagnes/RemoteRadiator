@@ -63,13 +63,12 @@ int main(void){
 	while(1){
 		
 		if(_usart1Buff.cmdAvailable == TRUE){
-			if(strcmp(_usart1Buff.data, "help") == 0){
-				usartSendString(USART1, "ca marche\n\r");
-			}else{
-				usartSendString(USART1, "Commande inconnu");
+			switch(_usart1Buff.data[0]){
+				case 'h':
+					usartSendString(USART1, "\r\nh : Affiche l'aide");
+				break;
+				
 			}
-			clearBuffer(_usart1Buff.data,MAX_USART_BUFF);
-			_usart1Buff.cmdAvailable = FALSE;
 		}
 		
 	}
