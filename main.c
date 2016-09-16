@@ -69,6 +69,8 @@ int main(void){
 				break;
 				
 			}
+			
+			
 		}
 		
 	}
@@ -178,9 +180,11 @@ void USART1_IRQHandler(void){
 	}
 }
 
-void clearBuffer(char *b,unsigned char size){
+void clearBuffer(circularBuff_t *buff,unsigned char size){
 	int i;
 	for(i=0;i<size;i++){
-		*(b+i) = 0;
+		*(buff->data+i) = 0;
 	}
+	buff->cmdAvailable = FALSE;
+	buff->id = 0;
 }
