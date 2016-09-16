@@ -69,7 +69,7 @@ int main(void){
 				
 			}
 			
-			clearBuffer(
+			clearBuffer(&_usart1Buff, MAX_USART_BUFF);
 		}
 		
 	}
@@ -101,7 +101,7 @@ void initApp(void){
 	_usart1Buff.readId = 0;
 	_usart1Buff.id = 0;
 	_usart1Buff.cmdAvailable = FALSE;
-  clearBuffer(_usart1Buff.data, MAX_USART_BUFF);
+  clearBuffer(&_usart1Buff, MAX_USART_BUFF);
 }
 
 void initUSART1(void){
