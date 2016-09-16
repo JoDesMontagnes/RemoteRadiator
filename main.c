@@ -165,7 +165,7 @@ void initUSART2(void){
 	
 	//On active la clock sur le périphérique
 	//A faire avant la config
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1 | RCC_APB2Periph_GPIOA | RCC_APB2Periph_AFIO, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART2 | RCC_APB2Periph_GPIOA | RCC_APB2Periph_AFIO, ENABLE);
 	
 	//Configuration de Tx
 	gpioaInitStruct.GPIO_Pin = GPIO_Pin_2;
