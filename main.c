@@ -78,7 +78,7 @@ int main(void){
 		
 		if(_usart2Buff.cmdAvailable == TRUE){
 			usartSendString(USART1, _usart2Buff.data);
-			clearBuffer(_usart2Buff.data, MAX_USART_BUFF);
+			clearBuffer(&_usart2Buff, MAX_USART_BUFF);
 		}
 		
 	}
@@ -116,7 +116,7 @@ void initApp(void){
 	_usart2Buff.readId = 0;
 	_usart2Buff.id = 0;
 	_usart2Buff.cmdAvailable = FALSE;
-  clearBuffer(&_usart2Buff.data, MAX_USART_BUFF);
+  clearBuffer(&_usart2Buff, MAX_USART_BUFF);
 }
 
 void initUSART1(void){
@@ -231,9 +231,6 @@ void USART1_IRQHandler(void){
 	}
 }
 
-<<<<<<< HEAD
-void clearBuffer(circularBuff_t *buff,unsigned char size){
-=======
 void USART2_IRQHandler(void){
 	if(USART_GetITStatus(USART2, USART_IT_RXNE) == SET){
 		
@@ -243,8 +240,7 @@ void USART2_IRQHandler(void){
 	}
 }
 
-void clearBuffer(char *b,unsigned char size){
->>>>>>> esp8266
+void clearBuffer(circularBuff_t *buff,unsigned char size){
 	int i;
 	for(i=0;i<size;i++){
 		*(buff->data+i) = 0;
