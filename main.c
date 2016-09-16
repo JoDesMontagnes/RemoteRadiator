@@ -32,6 +32,7 @@ void initUSART1(void);
 void usartSendChar(USART_TypeDef *usart, char c);
 void usartSendString(USART_TypeDef *usart, char *s);
 void usartSendUint32(USART_TypeDef *usart, uint32_t data);
+void clearBuffer(char *b,unsigned char size);
 
 //=====================================================================
 
@@ -64,8 +65,10 @@ int main(void){
 		if(_usart1Buff.cmdAvailable == TRUE){
 			if(strcmp(_usart1Buff.data, "help") == 0){
 				usartSendString(USART1, "ca marche\n\r");
+			}else{
+				usartSendString(USART1, "Commande inconnu");
 			}
-			
+			clearBuffer(_usart1Buff.data,MAX_USART_BUFF);
 			_usart1Buff.cmdAvailable = FALSE;
 		}
 		
@@ -96,8 +99,9 @@ void initSystem(void){
 
 void initApp(void){
 	_usart1Buff.readId = 0;
-	_usart1Buff.id = 1;
+	_usart1Buff.id = 0;
 	_usart1Buff.cmdAvailable = FALSE;
+  clearBuffer(_usart1Buff.data, MAX_USART_BUFF);
 }
 
 void initUSART1(void){
@@ -156,7 +160,6 @@ void  usartSendUint32(USART_TypeDef *usart, uint32_t data){
 	usartSendString(usart, buffer);
 }
 
-
 void USART1_IRQHandler(void){
 	if(USART_GetITStatus(USART1, USART_IT_RXNE) == SET){
 		if(_usart1Buff.cmdAvailable == FALSE){
@@ -173,5 +176,12 @@ void USART1_IRQHandler(void){
 			}
 		}
 		USART_ClearITPendingBit(USART1, USART_IT_RXNE);
+	}
+}
+
+void clearBuffer(char *b,unsigned char size){
+	int i;
+	for(i=0;i<size;i++){
+		*(b+i) = 0;
 	}
 }
