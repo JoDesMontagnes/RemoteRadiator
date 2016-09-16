@@ -147,8 +147,7 @@ void initUSART1(void){
 	
 	USART_Init(USART1, &usart1InitStruct);
 	
-	//A utiliser pour autoriser le irq
-	//USART_ITConfig(USART1, USART_IT_TXE, ENABLE);
+	//Autorisation des Interruptions
 	USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
 	NVIC_EnableIRQ(USART1_IRQn);
 }
