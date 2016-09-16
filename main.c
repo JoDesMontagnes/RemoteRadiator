@@ -22,7 +22,12 @@ Description : Exemple d'un buffer tournant sous STM32.
 //====================================================================
 typedef enum {FALSE, TRUE}BOOL;
 
-
+typedef struct{
+	char data[MAX_USART_BUFF];
+	uint16_t readId;
+	uint16_t id;
+	BOOL cmdAvailable; 
+}circularBuff_t;
 
 //====================================================================
 void initSystem(void);
@@ -33,16 +38,10 @@ void initUSART2(void);
 void usartSendChar(USART_TypeDef *usart, char c);
 void usartSendString(USART_TypeDef *usart, char *s);
 void usartSendUint32(USART_TypeDef *usart, uint32_t data);
-void clearBuffer(char *b,unsigned char size);
+void clearBuffer(circularBuff_t *buff,unsigned char size);
 
 //=====================================================================
 
-typedef struct{
-	char data[MAX_USART_BUFF];
-	uint16_t readId;
-	uint16_t id;
-	BOOL cmdAvailable; 
-}circularBuff_t;
 
 static circularBuff_t _usart1Buff;
 static circularBuff_t _usart2Buff;
@@ -73,6 +72,8 @@ int main(void){
 					usartSendString(USART1, "\r\nh : Affiche l'aide");
 				break;
 			}
+			
+			clearBuffer(&_usart1Buff, MAX_USART_BUFF);
 		}
 		
 		if(_usart2Buff.cmdAvailable == TRUE){
@@ -109,12 +110,13 @@ void initApp(void){
 	_usart1Buff.readId = 0;
 	_usart1Buff.id = 0;
 	_usart1Buff.cmdAvailable = FALSE;
-  clearBuffer(_usart1Buff.data, MAX_USART_BUFF);
+  clearBuffer(&_usart1Buff, MAX_USART_BUFF);
+
 	
 	_usart2Buff.readId = 0;
 	_usart2Buff.id = 0;
 	_usart2Buff.cmdAvailable = FALSE;
-  clearBuffer(_usart2Buff.data, MAX_USART_BUFF);
+  clearBuffer(&_usart2Buff.data, MAX_USART_BUFF);
 }
 
 void initUSART1(void){
@@ -229,6 +231,9 @@ void USART1_IRQHandler(void){
 	}
 }
 
+<<<<<<< HEAD
+void clearBuffer(circularBuff_t *buff,unsigned char size){
+=======
 void USART2_IRQHandler(void){
 	if(USART_GetITStatus(USART2, USART_IT_RXNE) == SET){
 		
@@ -239,8 +244,11 @@ void USART2_IRQHandler(void){
 }
 
 void clearBuffer(char *b,unsigned char size){
+>>>>>>> esp8266
 	int i;
 	for(i=0;i<size;i++){
-		*(b+i) = 0;
+		*(buff->data+i) = 0;
 	}
+	buff->cmdAvailable = FALSE;
+	buff->id = 0;
 }
