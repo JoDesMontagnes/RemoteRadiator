@@ -45,6 +45,7 @@ typedef struct{
 }circularBuff_t;
 
 static circularBuff_t _usart1Buff;
+static circularBuff_t _usart2Buff;
 
 int main(void){
 	int i;
@@ -53,12 +54,15 @@ int main(void){
 	initSystem();
 	initApp();
 	initUSART1();
+	initUSART2();
 	
 	usartSendString(USART1, "Init ... done\r\n");
 	RCC_GetClocksFreq(&clk);
 	usartSendString(USART1, "System frequency : ");
 	usartSendUint32(USART1, clk.SYSCLK_Frequency);
 	usartSendString(USART1, "\r\n");
+	
+	
 	
 	
 	while(1){
@@ -68,8 +72,12 @@ int main(void){
 				case 'h':
 					usartSendString(USART1, "\r\nh : Affiche l'aide");
 				break;
-				
 			}
+		}
+		
+		if(_usart2Buff.cmdAvailable == TRUE){
+			usartSendString(USART1, _usart2Buff.data);
+			clearBuffer(_usart2Buff.data, MAX_USART_BUFF);
 		}
 		
 	}
@@ -102,6 +110,11 @@ void initApp(void){
 	_usart1Buff.id = 0;
 	_usart1Buff.cmdAvailable = FALSE;
   clearBuffer(_usart1Buff.data, MAX_USART_BUFF);
+	
+	_usart2Buff.readId = 0;
+	_usart2Buff.id = 0;
+	_usart2Buff.cmdAvailable = FALSE;
+  clearBuffer(_usart2Buff.data, MAX_USART_BUFF);
 }
 
 void initUSART1(void){
