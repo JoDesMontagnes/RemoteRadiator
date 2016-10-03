@@ -26,8 +26,8 @@ typedef struct{
 	int lenght;
 	int id;
 	char *data;
-	struct Cmd_t *forward;
-	struct Cmd_t *backard;
+  struct Cmd_t *next;
+	struct Cmd_t *prev;
 }Cmd_t;
 
 typedef struct{
@@ -42,17 +42,19 @@ void initApp(void);
 void initUSART1(void);
 void initUSART2(void);
 
+Cmd_t* createCmdStruct(Cmd_t* prev);
+
 void usartSendChar(USART_TypeDef *usart, char c);
 void usartSendString(USART_TypeDef *usart, char *s);
 void usartSendUint32(USART_TypeDef *usart, uint32_t data);
-char* usartGetString(circularBuff_t *buff);
-void clearBuffer(circularBuff_t *buff,unsigned char size);
+char* usartGetString(Buff_t *buff);
+void clearBuffer(Buff_t *buff,unsigned char size);
 
 //=====================================================================
 
 
-static circularBuff_t _usart1Buff;
-static circularBuff_t _usart2Buff;
+static Buff_t _usart1Buff;
+static Buff_t _usart2Buff;
 
 int main(void){
 	int i;
@@ -85,25 +87,6 @@ int main(void){
 	
 	while(1){
 		
-		if(_usart1Buff.cmdAvailable == TRUE){
-			switch(_usart1Buff.data[0]){
-				case 'h':
-					usartSendString(USART1, "\r\nh : Affiche l'aide");
-				break;
-				default:
-					usartSendString(USART2, _usart1Buff.data);
-				break;
-			}
-			
-			clearBuffer(&_usart1Buff, MAX_USART_BUFF);
-		}
-		
-		if(_usart2Buff.cmdAvailable == TRUE){
-			
-			usartSendString(USART1, _usart2Buff.data);
-			clearBuffer(&_usart2Buff, MAX_USART_BUFF);
-		}
-		
 	}
 	
 	
@@ -130,16 +113,14 @@ void initSystem(void){
 }
 
 void initApp(void){
-	_usart1Buff.readId = 0;
-	_usart1Buff.id = 0;
-	_usart1Buff.cmdAvailable = FALSE;
-  clearBuffer(&_usart1Buff, MAX_USART_BUFF);
+	_usart1Buff.nb_Cmd = 0;
+	_usart1Buff.first = NULL;
+	_usart1Buff.last = NULL;
 
 	
-	_usart2Buff.readId = 0;
-	_usart2Buff.id = 0;
-	_usart2Buff.cmdAvailable = FALSE;
-  clearBuffer(&_usart2Buff, MAX_USART_BUFF);
+	_usart2Buff.nb_Cmd = 0;
+	_usart2Buff.first = NULL;
+	_usart2Buff.last = NULL;
 }
 
 void initUSART1(void){
@@ -235,62 +216,33 @@ void  usartSendUint32(USART_TypeDef *usart, uint32_t data){
 	usartSendString(usart, buffer);
 }
 
-char* usartGetString(circularBuff_t *buff){
-	char *res;
-	unsigned int size = strlen(buff->data);
-	usartSendUint32(USART1, (uint32_t)size);
-	res = malloc(sizeof(*buff->data)*size+1);
-	usartSendUint32(USART1, (uint32_t)(strlen(res)));
-	//Mettre en place un systeme de timeout
-	while(buff->cmdAvailable != TRUE);
-	strcpy(res, buff->data);
-	clearBuffer(buff, size);
-	return(res);
+char* usartGetString(Buff_t *buff){
+	
 }
 
 void USART1_IRQHandler(void){
 	if(USART_GetITStatus(USART1, USART_IT_RXNE) == SET){
-			char c = USART_ReceiveData(USART1);
-			if(c != '\n'){
-				_usart1Buff.data[_usart1Buff.id] = c;
-				if(_usart1Buff.id < MAX_USART_BUFF)
-					_usart1Buff.id++;
-				else
-					_usart1Buff.id = 0;
-			}else{
-				
-				_usart1Buff.data[_usart1Buff.id] = c;
-				_usart1Buff.cmdAvailable = TRUE;
-			  _usart1Buff.id = 0;				
-			}
+		if(_usart1Buff.nb_Cmd == 0){
+			_usart1Buff.first = _usart1Buff.last = createCmdStruct(NULL);
+		}
 		USART_ClearITPendingBit(USART1, USART_IT_RXNE);
 	}
 }
 
 void USART2_IRQHandler(void){
 	if(USART_GetITStatus(USART2, USART_IT_RXNE) == SET){
-			char c = USART_ReceiveData(USART2);
-			if(c != '\n'){
-				_usart2Buff.data[_usart2Buff.id] = c;
-				if(_usart2Buff.id < MAX_USART_BUFF)
-					_usart2Buff.id++;
-				else
-					_usart2Buff.id = 0;
-			}else{
-				_usart2Buff.data[_usart2Buff.id] = c;
-				_usart2Buff.cmdAvailable = TRUE;
-			  _usart2Buff.id = 0;				
-			}
+			
 		
 		USART_ClearITPendingBit(USART2, USART_IT_RXNE);
 	}
 }
 
-void clearBuffer(circularBuff_t *buff,unsigned char size){
-	int i;
-	for(i=0;i<size;i++){
-		*(buff->data+i) = 0;
-	}
-	buff->cmdAvailable = FALSE;
-	buff->id = 0;
+
+Cmd_t* createCmdStruct(Cmd_t* prev){
+	Cmd_t* temp = malloc(sizeof(Cmd_t));
+	temp->id = 0;
+	temp->lenght = 0;
+	temp->data = malloc(sizeof(temp->data)*MAX_USART_BUFF);
+	temp->next = NULL;
+	temp->prev = (struct Cmd_t*)prev;
 }
