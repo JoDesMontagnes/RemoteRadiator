@@ -23,11 +23,10 @@ Description : Exemple d'un buffer tournant sous STM32.
 typedef enum {FALSE, TRUE}BOOL;
 
 typedef struct{
-	char data[MAX_USART_BUFF];
-	uint16_t readId;
-	uint16_t id;
-	BOOL cmdAvailable; 
-}circularBuff_t;
+	int nb_Cmd;
+	Cmd_t *first;
+	Cmd_t *last;
+}Buff_t;
 
 //====================================================================
 void initSystem(void);
@@ -243,7 +242,6 @@ char* usartGetString(circularBuff_t *buff){
 
 void USART1_IRQHandler(void){
 	if(USART_GetITStatus(USART1, USART_IT_RXNE) == SET){
-		if(_usart1Buff.cmdAvailable == FALSE){
 			char c = USART_ReceiveData(USART1);
 			if(c != '\n'){
 				_usart1Buff.data[_usart1Buff.id] = c;
@@ -257,14 +255,12 @@ void USART1_IRQHandler(void){
 				_usart1Buff.cmdAvailable = TRUE;
 			  _usart1Buff.id = 0;				
 			}
-		}
 		USART_ClearITPendingBit(USART1, USART_IT_RXNE);
 	}
 }
 
 void USART2_IRQHandler(void){
 	if(USART_GetITStatus(USART2, USART_IT_RXNE) == SET){
-		if(_usart2Buff.cmdAvailable == FALSE){
 			char c = USART_ReceiveData(USART2);
 			if(c != '\n'){
 				_usart2Buff.data[_usart2Buff.id] = c;
@@ -277,7 +273,6 @@ void USART2_IRQHandler(void){
 				_usart2Buff.cmdAvailable = TRUE;
 			  _usart2Buff.id = 0;				
 			}
-		}
 		
 		USART_ClearITPendingBit(USART2, USART_IT_RXNE);
 	}
