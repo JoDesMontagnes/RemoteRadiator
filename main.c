@@ -23,6 +23,14 @@ Description : Exemple d'un buffer tournant sous STM32.
 typedef enum {FALSE, TRUE}BOOL;
 
 typedef struct{
+	int lenght;
+	int id;
+	char *data;
+	struct Cmd_t *forward;
+	struct Cmd_t *backard;
+}Cmd_t;
+
+typedef struct{
 	int nb_Cmd;
 	Cmd_t *first;
 	Cmd_t *last;
