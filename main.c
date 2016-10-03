@@ -9,7 +9,7 @@ alors qu'on ne fait que 2 getString et on envoit que deux "salut"
 #include <string.h>
 
 //====================================================================
-#if !defined HSE_VALUE
+#ifndef HSE_VALUE
 	#define HSE_VALUE 8000000
 #endif
 
@@ -37,6 +37,7 @@ void initSystem(void);
 void initApp(void);
 void initUSART1(void);
 void initUSART2(void);
+void delay(volatile uint32_t ms);
 
 Cmd_t* createCmdStruct(Cmd_t* prev);
 void allocateUsartBuff(Cmd_t* tempCmd, Buff_t *usartBuff);
@@ -54,6 +55,7 @@ char* usartGetString(Cmd_t* cmd, Buff_t *buff);
 
  static Buff_t _usart1Buff, _usart2Buff;
  Cmd_t *_usart1Cmd, *_usart2Cmd;
+ static volatile uint32_t TimingDelay;
 
 int main(void){
 	char *recep;
@@ -64,14 +66,15 @@ int main(void){
 	
 	
 	usartSendString(USART1, "Configuration du module wifi:\r\n");
-	usartSendString(USART2, "AT+CWMODE_CUR=2\r\n");
 
+	usartSendString(USART2, "AT+CWMODE_CUR=2\r\n");
+	
 	usartSendString(USART2, "AT+CWSAP=\"ESP8266\", \"1234567890\",6,3,1,0");
+	
 	usartSendString(USART2, "AT+CWDHCP_CUR=3\r\n");
+
 	usartSendString(USART2, "AT+CIPAP_CUR?\r\n");
-	
-	
-	usartSendString(USART1, "Start APP\r\n");
+
 	while(1){
 		taskUsart1Handler();
 		taskUsart2Handler();
@@ -239,8 +242,26 @@ void USART2_IRQHandler(void){
 		_usart2Cmd->id++;
 		USART_ClearITPendingBit(USART2, USART_IT_RXNE);
 	}
+	
 }
 
+void SysTick_Handler(void){
+	 if (TimingDelay != 0x00)
+   {
+		TimingDelay--;
+   }else{
+			SysTick->CTRL = 0;
+		 usartSendChar(USART1, 'a');
+	 }
+}
+
+void delay(volatile uint32_t ms){
+	TimingDelay = ms;
+	SysTick_Config(SystemCoreClock/1000);
+	while(TimingDelay != 0);
+}
+
+	
 Cmd_t* createCmdStruct(Cmd_t* prev){
 	Cmd_t* temp = malloc(sizeof(Cmd_t));
 	temp->id = 0;
