@@ -18,20 +18,20 @@ Description : Exemple d'un buffer tournant sous STM32.
 	#define HSE_VALUE 8000000
 #endif
 
-#define MAX_USART_BUFF 255
+#define MAX_USART_BUFF 200
 //====================================================================
 typedef enum {FALSE, TRUE}BOOL;
 
-typedef struct{
+typedef struct CMD_T{
 	int lenght;
 	int id;
 	BOOL cmd_available;
-	char *data;
-  struct Cmd_t *next;
-	struct Cmd_t *prev;
+	char data[MAX_USART_BUFF];
+  struct CMD_T *next;
+	struct CMD_T *prev;
 }Cmd_t;
 
-typedef struct{
+typedef struct BUFF_T{
 	int nb_Cmd;
 	Cmd_t *first;
 	Cmd_t *last;
@@ -49,7 +49,6 @@ void usartSendChar(USART_TypeDef *usart, char c);
 void usartSendString(USART_TypeDef *usart, char *s);
 void usartSendUint32(USART_TypeDef *usart, uint32_t data);
 char* usartGetString(Buff_t *buff);
-void clearBuffer(Buff_t *buff,unsigned char size);
 
 //=====================================================================
 
@@ -58,8 +57,8 @@ static Buff_t _usart1Buff;
 static Buff_t _usart2Buff;
 
 int main(void){
-	int i;
-	char* rep;
+	//int i;
+	//char* rep;
 	RCC_ClocksTypeDef clk;
 	
 	initSystem();
@@ -67,26 +66,32 @@ int main(void){
 	initUSART1();
 	initUSART2();
 	
-	clearBuffer(&_usart1Buff, MAX_USART_BUFF);
-	clearBuffer(&_usart2Buff, MAX_USART_BUFF);
-	
-	usartSendString(USART1, "Init ... done\r\n");
-	RCC_GetClocksFreq(&clk);
-	usartSendString(USART1, "System frequency : ");
-	usartSendUint32(USART1, clk.SYSCLK_Frequency);
-	usartSendString(USART1, "\r\n");
-	
 	
 	usartSendString(USART1, "Configuration du module wifi:\r\n");
-	usartSendString(USART2, "AT+CWMODE_CUR=1\r\n");
-	usartSendString(USART2, "AT+CWJAP_CUR=\"SFR-d178\", \"DELAE5LW7U4A\"\r\n");
-	usartSendString(USART2, "AT+CWDHCP_CUR=3\r\n");
-	usartSendString(USART2, "AT+CIPAP_CUR?\r\n");
+	//usartSendString(USART2, "AT+CWMODE_CUR=1\r\n");
+	//usartSendString(USART2, "AT+CWJAP_CUR=\"SFR-d178\", \"DELAE5LW7U4A\"\r\n");
+	//usartSendString(USART2, "AT+CWDHCP_CUR=3\r\n");
+	//usartSendString(USART2, "AT+CIPAP_CUR?\r\n");
 	
-	clearBuffer(&_usart1Buff, MAX_USART_BUFF);
-	clearBuffer(&_usart2Buff, MAX_USART_BUFF);
+	
 	
 	while(1){
+		
+		while(_usart1Buff.nb_Cmd > 0){
+			if(_usart1Buff.first->cmd_available == TRUE){
+				usartSendString(USART1, _usart1Buff.first->data);
+				if(_usart1Buff.first->next != NULL){
+					_usart1Buff.first = _usart1Buff.first->next;
+					free(_usart1Buff.first->prev);
+					_usart1Buff.first->prev = NULL;			
+				}else{
+					usartSendString(USART1, "nouveau\r\n");
+					free(_usart1Buff.first);
+					_usart1Buff.first = _usart1Buff.last = createCmdStruct(NULL);
+				}
+				_usart1Buff.nb_Cmd --;
+			}
+		}
 		
 	}
 	
@@ -117,11 +122,13 @@ void initApp(void){
 	_usart1Buff.nb_Cmd = 0;
 	_usart1Buff.first = NULL;
 	_usart1Buff.last = NULL;
+	_usart1Buff.first = _usart1Buff.last = createCmdStruct(NULL);
 
 	
 	_usart2Buff.nb_Cmd = 0;
 	_usart2Buff.first = NULL;
 	_usart2Buff.last = NULL;
+	_usart2Buff.first = _usart2Buff.last = createCmdStruct(NULL);
 }
 
 void initUSART1(void){
@@ -218,36 +225,70 @@ void  usartSendUint32(USART_TypeDef *usart, uint32_t data){
 }
 
 char* usartGetString(Buff_t *buff){
-	
+	return(NULL);
 }
 
 void USART1_IRQHandler(void){
 	if(USART_GetITStatus(USART1, USART_IT_RXNE) == SET){
-		if(_usart1Buff.nb_Cmd == 0){
+		
+		if(_usart1Buff.first == NULL){
 			_usart1Buff.first = _usart1Buff.last = createCmdStruct(NULL);
-		}else{
-			
 		}
-
+		
+		if(_usart1Buff.last->cmd_available == TRUE){
+				//Create a new cmd
+			_usart1Buff.last->next = createCmdStruct(_usart1Buff.last);
+			_usart1Buff.last->next->prev = _usart1Buff.last;
+			_usart1Buff.last = _usart1Buff.last->next;
+		}
+		
+		//Save char in the buffer
+		_usart1Buff.last->data[_usart1Buff.last->id] = USART_ReceiveData(USART1);
+		if(_usart1Buff.last->data[_usart1Buff.last->id] == '\n'){
+			_usart1Buff.last->data[_usart1Buff.last->id+1] = '\0';
+			_usart1Buff.last->cmd_available = TRUE;
+			_usart1Buff.nb_Cmd++;
+		}
+		_usart1Buff.last->id++;
+		
 		USART_ClearITPendingBit(USART1, USART_IT_RXNE);
 	}
 }
 
 void USART2_IRQHandler(void){
 	if(USART_GetITStatus(USART2, USART_IT_RXNE) == SET){
+		if(_usart2Buff.first == NULL ){
+			_usart2Buff.first = _usart2Buff.last = createCmdStruct(NULL);
+		}
+		
+		//Create a new cmd
+		if(_usart2Buff.last->cmd_available == TRUE){
 			
+			_usart2Buff.last->next = createCmdStruct(_usart2Buff.last);
+			_usart2Buff.last->next->prev = _usart2Buff.last;
+			_usart2Buff.last = _usart2Buff.last->next;
+		}
+		
+		//Save char in the buffer
+		_usart2Buff.last->data[_usart2Buff.last->id] = USART_ReceiveData(USART2);
+		if(_usart2Buff.last->data[_usart2Buff.last->id] == '\n'){
+			
+			_usart2Buff.last->data[_usart2Buff.last->id+1] = '\0';
+			_usart2Buff.last->cmd_available = TRUE;
+			_usart2Buff.nb_Cmd++;
+		}
+		_usart2Buff.last->id++;
 		
 		USART_ClearITPendingBit(USART2, USART_IT_RXNE);
 	}
 }
-
 
 Cmd_t* createCmdStruct(Cmd_t* prev){
 	Cmd_t* temp = malloc(sizeof(Cmd_t));
 	temp->id = 0;
 	temp->cmd_available = FALSE;
 	temp->lenght = 0;
-	temp->data = malloc(sizeof(temp->data)*MAX_USART_BUFF);
 	temp->next = NULL;
-	temp->prev = (struct Cmd_t*)prev;
+	temp->prev = prev;
+	return(temp);
 }

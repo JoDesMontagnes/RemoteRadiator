@@ -28,16 +28,14 @@ Project File Date:  09/16/2016
 *** Using Compiler 'V5.06 update 1 (build 61)', folder: 'C:\Keil_v5\ARM\ARMCC\Bin'
 Build target 'Target 1'
 compiling main.c...
-main.c(108): warning:  #111-D: statement is unreachable
+main.c(99): warning:  #111-D: statement is unreachable
   	return(0);
-main.c(51): warning:  #177-D: variable "i" was declared but never referenced
-  	int i;
-main.c(52): warning:  #177-D: variable "rep" was declared but never referenced
-  	char* rep;
-main.c: 3 warnings, 0 errors
+main.c(62): warning:  #177-D: variable "clk" was declared but never referenced
+  	RCC_ClocksTypeDef clk;
+main.c: 2 warnings, 0 errors
 linking...
-Program Size: Code=4684 RO-data=268 RW-data=20 ZI-data=2156  
-".\Objects\test.axf" - 0 Error(s), 3 Warning(s).
+Program Size: Code=3704 RO-data=268 RW-data=20 ZI-data=1660  
+".\Objects\test.axf" - 0 Error(s), 2 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -103,7 +101,7 @@ Package Vendor: Keil
    * Component: Keil::Device:StdPeriph Drivers:USART:3.5.0
       Source file:   Device\StdPeriph_Driver\src\stm32f10x_usart.c
       Include file:  Device\StdPeriph_Driver\inc\stm32f10x_usart.h
-Build Time Elapsed:  00:00:00
+Build Time Elapsed:  00:00:01
 </pre>
 </body>
 </html>
