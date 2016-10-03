@@ -1,3 +1,8 @@
+/*
+Probleme : Reception de salut salut salu
+alors qu'on ne fait que 2 getString et on envoit que deux "salut"
+
+*/
 #include "stm32f10x.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,7 +13,7 @@
 	#define HSE_VALUE 8000000
 #endif
 
-#define MAX_USART_BUFF 50
+#define MAX_USART_BUFF 100
 //====================================================================
 typedef enum {FALSE, TRUE}BOOL;
 
@@ -42,17 +47,16 @@ void freeUsartBuff(Buff_t *buff);
 void usartSendChar(USART_TypeDef *usart, char c);
 void usartSendString(USART_TypeDef *usart, char *s);
 void usartSendUint32(USART_TypeDef *usart, uint32_t data);
-char* usartGetString(Buff_t *buff);
+char* usartGetString(Cmd_t* cmd, Buff_t *buff);
 
 //=====================================================================
 
 
-static Buff_t _usart1Buff;
-static Buff_t _usart2Buff;
-static Cmd_t *_usart1Cmd, *_usart2Cmd;
+ static Buff_t _usart1Buff, _usart2Buff;
+ Cmd_t *_usart1Cmd, *_usart2Cmd;
 
 int main(void){
-	
+	char *recep;
 	initSystem();
 	initApp();
 	initUSART1();
@@ -60,17 +64,17 @@ int main(void){
 	
 	
 	usartSendString(USART1, "Configuration du module wifi:\r\n");
-	usartSendString(USART2, "AT+CWMODE_CUR=1\r\n");
-	usartSendString(USART2, "AT+CWJAP_CUR=\"SFR-d178\", \"DELAE5LW7U4A\"\r\n");
+	usartSendString(USART2, "AT+CWMODE_CUR=2\r\n");
+
+	usartSendString(USART2, "AT+CWSAP=\"ESP8266\", \"1234567890\",6,3,1,0");
 	usartSendString(USART2, "AT+CWDHCP_CUR=3\r\n");
 	usartSendString(USART2, "AT+CIPAP_CUR?\r\n");
 	
 	
-	
+	usartSendString(USART1, "Start APP\r\n");
 	while(1){
 		taskUsart1Handler();
 		taskUsart2Handler();
-		
 }
 	
 	
@@ -181,7 +185,6 @@ void initUSART2(void){
 	NVIC_EnableIRQ(USART2_IRQn);
 }
 
-
 void usartSendChar(USART_TypeDef *usart, char c){
 		while(USART_GetFlagStatus(usart, USART_FLAG_TXE) == RESET);
 		USART_SendData(usart, c);
@@ -200,8 +203,15 @@ void  usartSendUint32(USART_TypeDef *usart, uint32_t data){
 	usartSendString(usart, buffer);
 }
 
-char* usartGetString(Buff_t *buff){
-	return(NULL);
+char* usartGetString(Cmd_t* cmd, Buff_t *buff){
+	char *temp;
+	while(buff->nb_Cmd <= 0){
+		allocateUsartBuff(cmd,buff);
+	}
+	temp = malloc(sizeof( *buff->first->data)*strlen( buff->first->data));
+	strcpy(temp, buff->first->data);
+	freeUsartBuff(buff);	
+	return(temp);
 }
 
 void USART1_IRQHandler(void){
@@ -221,15 +231,12 @@ void USART1_IRQHandler(void){
 
 void USART2_IRQHandler(void){
 	if(USART_GetITStatus(USART2, USART_IT_RXNE) == SET){
-		//Save char in the buffer
 		_usart2Cmd->data[_usart2Cmd->id] = USART_ReceiveData(USART2);
 		if(_usart2Cmd->data[_usart2Cmd->id] == '\n'){
 			_usart2Cmd->data[_usart2Cmd->id+1] = '\0';
 			_usart2Cmd->cmd_available = TRUE;
 		}
 		_usart2Cmd->id++;
-		
-		
 		USART_ClearITPendingBit(USART2, USART_IT_RXNE);
 	}
 }
@@ -245,15 +252,20 @@ Cmd_t* createCmdStruct(Cmd_t* prev){
 }
 
 void allocateUsartBuff(Cmd_t* tempCmd, Buff_t *usartBuff){
+		
 		if(tempCmd->cmd_available == TRUE){
+				Cmd_t *newCmd = createCmdStruct(NULL);
+				memcpy(newCmd,tempCmd,sizeof(*tempCmd));
 				if(usartBuff->first == NULL){
-					usartBuff->first = usartBuff->last = tempCmd;
+					usartBuff->first = usartBuff->last = newCmd;
 				}else{
-					usartBuff->last->next = tempCmd;
+					usartBuff->last->next = newCmd;
 					usartBuff->last->prev = usartBuff->last;
-					usartBuff->last = tempCmd;
+					usartBuff->last = newCmd;
 				}
-				tempCmd = createCmdStruct(NULL);
+				tempCmd->cmd_available = FALSE;
+				tempCmd->id = 0;
+				tempCmd->next = tempCmd->prev = NULL;
 				usartBuff->last->cmd_available = TRUE;
 				usartBuff->nb_Cmd++;
 		}
@@ -261,7 +273,7 @@ void allocateUsartBuff(Cmd_t* tempCmd, Buff_t *usartBuff){
 
 void freeUsartBuff(Buff_t *buff){
 	if(buff->first->next != NULL){
-		buff->first = buff->first->next;
+	  buff->first = buff->first->next;
 		free(buff->first->prev);
 		buff->first->prev = NULL;			
 	}else{
@@ -269,7 +281,7 @@ void freeUsartBuff(Buff_t *buff){
 		buff->first = NULL;
 		buff->last = NULL;
 	}
-				buff->nb_Cmd --;
+	buff->nb_Cmd--;
 }
 
 void taskUsart1Handler(void){
