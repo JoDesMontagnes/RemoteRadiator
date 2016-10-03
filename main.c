@@ -25,6 +25,7 @@ typedef enum {FALSE, TRUE}BOOL;
 typedef struct{
 	int lenght;
 	int id;
+	BOOL cmd_available;
 	char *data;
   struct Cmd_t *next;
 	struct Cmd_t *prev;
@@ -224,7 +225,10 @@ void USART1_IRQHandler(void){
 	if(USART_GetITStatus(USART1, USART_IT_RXNE) == SET){
 		if(_usart1Buff.nb_Cmd == 0){
 			_usart1Buff.first = _usart1Buff.last = createCmdStruct(NULL);
+		}else{
+			
 		}
+
 		USART_ClearITPendingBit(USART1, USART_IT_RXNE);
 	}
 }
@@ -241,6 +245,7 @@ void USART2_IRQHandler(void){
 Cmd_t* createCmdStruct(Cmd_t* prev){
 	Cmd_t* temp = malloc(sizeof(Cmd_t));
 	temp->id = 0;
+	temp->cmd_available = FALSE;
 	temp->lenght = 0;
 	temp->data = malloc(sizeof(temp->data)*MAX_USART_BUFF);
 	temp->next = NULL;
