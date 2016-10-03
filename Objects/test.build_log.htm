@@ -26,16 +26,21 @@ Project File Date:  09/16/2016
 
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 1 (build 61)', folder: 'C:\Keil_v5\ARM\ARMCC\Bin'
-Build target 'Target 1'
+Rebuild target 'Target 1'
+compiling misc.c...
+compiling stm32f10x_gpio.c...
 compiling main.c...
-main.c(99): warning:  #111-D: statement is unreachable
+main.c(87): warning:  #111-D: statement is unreachable
   	return(0);
-main.c(62): warning:  #177-D: variable "clk" was declared but never referenced
-  	RCC_ClocksTypeDef clk;
-main.c: 2 warnings, 0 errors
+main.c: 1 warning, 0 errors
+compiling GPIO_STM32F10x.c...
+compiling stm32f10x_rcc.c...
+compiling stm32f10x_usart.c...
+assembling startup_stm32f10x_md.s...
+compiling system_stm32f10x.c...
 linking...
-Program Size: Code=3704 RO-data=268 RW-data=20 ZI-data=1660  
-".\Objects\test.axf" - 0 Error(s), 2 Warning(s).
+Program Size: Code=3788 RO-data=268 RW-data=28 ZI-data=1660  
+".\Objects\test.axf" - 0 Error(s), 1 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -101,7 +106,7 @@ Package Vendor: Keil
    * Component: Keil::Device:StdPeriph Drivers:USART:3.5.0
       Source file:   Device\StdPeriph_Driver\src\stm32f10x_usart.c
       Include file:  Device\StdPeriph_Driver\inc\stm32f10x_usart.h
-Build Time Elapsed:  00:00:01
+Build Time Elapsed:  00:00:02
 </pre>
 </body>
 </html>
