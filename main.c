@@ -10,6 +10,7 @@ Description : Exemple d'un buffer tournant sous STM32.
 
 #include "stm32f10x.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 //====================================================================
@@ -18,7 +19,6 @@ Description : Exemple d'un buffer tournant sous STM32.
 #endif
 
 #define MAX_USART_BUFF 255
-
 //====================================================================
 typedef enum {FALSE, TRUE}BOOL;
 
@@ -38,6 +38,7 @@ void initUSART2(void);
 void usartSendChar(USART_TypeDef *usart, char c);
 void usartSendString(USART_TypeDef *usart, char *s);
 void usartSendUint32(USART_TypeDef *usart, uint32_t data);
+char* usartGetString(circularBuff_t *buff);
 void clearBuffer(circularBuff_t *buff,unsigned char size);
 
 //=====================================================================
@@ -48,12 +49,16 @@ static circularBuff_t _usart2Buff;
 
 int main(void){
 	int i;
+	char* rep;
 	RCC_ClocksTypeDef clk;
 	
 	initSystem();
 	initApp();
 	initUSART1();
 	initUSART2();
+	
+	clearBuffer(&_usart1Buff, MAX_USART_BUFF);
+	clearBuffer(&_usart2Buff, MAX_USART_BUFF);
 	
 	usartSendString(USART1, "Init ... done\r\n");
 	RCC_GetClocksFreq(&clk);
@@ -62,7 +67,14 @@ int main(void){
 	usartSendString(USART1, "\r\n");
 	
 	
+	usartSendString(USART1, "Configuration du module wifi:\r\n");
+	usartSendString(USART2, "AT+CWMODE_CUR=1\r\n");
+	usartSendString(USART2, "AT+CWJAP_CUR=\"SFR-d178\", \"DELAE5LW7U4A\"\r\n");
+	usartSendString(USART2, "AT+CWDHCP_CUR=3\r\n");
+	usartSendString(USART2, "AT+CIPAP_CUR?\r\n");
 	
+	clearBuffer(&_usart1Buff, MAX_USART_BUFF);
+	clearBuffer(&_usart2Buff, MAX_USART_BUFF);
 	
 	while(1){
 		
@@ -214,6 +226,19 @@ void  usartSendUint32(USART_TypeDef *usart, uint32_t data){
 	char buffer[11];
 	sprintf(buffer, "%zu",data);
 	usartSendString(usart, buffer);
+}
+
+char* usartGetString(circularBuff_t *buff){
+	char *res;
+	unsigned int size = strlen(buff->data);
+	usartSendUint32(USART1, (uint32_t)size);
+	res = malloc(sizeof(*buff->data)*size+1);
+	usartSendUint32(USART1, (uint32_t)(strlen(res)));
+	//Mettre en place un systeme de timeout
+	while(buff->cmdAvailable != TRUE);
+	strcpy(res, buff->data);
+	clearBuffer(buff, size);
+	return(res);
 }
 
 void USART1_IRQHandler(void){
