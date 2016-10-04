@@ -71,17 +71,12 @@ int main(void){
 	
 	
 	usartSendString(USART1, "Configuration du module wifi:\r\n");
-	usartSendString(USART2, "AT+CWMODE_CUR=2\r\n");
-	
-	usartSendString(USART2, "AT+CWSAP=\"ESP8266\", \"1234567890\",6,3,1,0");
-	
-	usartSendString(USART2, "AT+CWMODE_CUR=2\r\n");
-	delay(1000);
-	usartSendString(USART2, "AT+CWSAP=\"ESP8266\",\"1234567890\",6,3,1,0\r\n");
-	delay(1000);
-	usartSendString(USART2, "AT+CWDHCP_CUR=3\r\n");
-	delay(1000);
-	usartSendString(USART2, "AT+CIPAP_CUR?\r\n");
+	sendAtCmd("AT+CWMODE_CUR=2\r\n");
+	sendAtCmd( "AT+CWSAP=\"ESP8266\", \"1234567890\",6,3,1,0");
+	sendAtCmd( "AT+CWMODE_CUR=2\r\n");
+	sendAtCmd( "AT+CWSAP=\"ESP8266\",\"1234567890\",6,3,1,0\r\n");
+	sendAtCmd( "AT+CWDHCP_CUR=3\r\n");
+	sendAtCmd( "AT+CIPAP_CUR?\r\n");
 	
 	
 	while(1){
@@ -215,9 +210,9 @@ void  usartSendUint32(USART_TypeDef *usart, uint32_t data){
 	usartSendString(usart, buffer);
 }
 
-BOOL usartGetString(Cmd_t* cmd, Buff_t *buff, char *temp){
+BOOL usartGetString(Cmd_t* cmd, Buff_t *buff, char *resp){
 	BOOL ok = TRUE;
-	TimingDelay = 10;
+	TimingDelay = 20;
 	SysTick_Config(SystemCoreClock/100);
 	while(buff->nb_Cmd <= 0){
 		allocateUsartBuff(cmd,buff);
@@ -225,9 +220,9 @@ BOOL usartGetString(Cmd_t* cmd, Buff_t *buff, char *temp){
 			return(FALSE);
 		}
 	}
-	
-	temp = malloc(sizeof( *buff->first->data)*strlen( buff->first->data));
-	strcpy(temp, buff->first->data);
+	resp = malloc(sizeof( *buff->first->data)*strlen( buff->first->data));
+	usartSendString(USART1, resp);
+	strcpy(resp, buff->first->data);
 	freeUsartBuff(buff);
 	return(TRUE);
 }
@@ -351,13 +346,17 @@ void taskUsart2Handler(void){
 
 
 BOOL sendAtCmd(char *at){
-	BOOL err = TRUE;
+	uint8_t cpt = 3;
 	char *rep;
 	do{
 		usartSendString(USART2, at);
 		while(usartGetString(_usart2Cmd, &_usart2Buff,rep) == TRUE){
-			if(strncpy(rep, "OK", 2))
-				err = FALSE;
+			usartSendString(USART1, rep);
+			if(strncpy(rep, "OK", 2)){
+				return(TRUE);				
+			}
 		}
-	}while(err == TRUE);
+		cpt--;
+	}while(cpt > 0);
+	return(FALSE);				
 }
