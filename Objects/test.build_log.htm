@@ -28,14 +28,18 @@ Project File Date:  09/16/2016
 *** Using Compiler 'V5.06 update 1 (build 61)', folder: 'C:\Keil_v5\ARM\ARMCC\Bin'
 Build target 'Target 1'
 compiling main.c...
-main.c(89): warning:  #111-D: statement is unreachable
+main.c(93): warning:  #111-D: statement is unreachable
   	return(0);
-main.c(61): warning:  #177-D: variable "recep" was declared but never referenced
+main.c(66): warning:  #177-D: variable "recep" was declared but never referenced
   	char *recep;
-main.c: 2 warnings, 0 errors
+main.c(219): warning:  #177-D: variable "ok" was declared but never referenced
+  	BOOL ok = TRUE;
+main.c(363): warning:  #940-D: missing return statement at end of non-void function "sendAtCmd"
+  }
+main.c: 4 warnings, 0 errors
 linking...
-Program Size: Code=3968 RO-data=268 RW-data=52 ZI-data=1660  
-".\Objects\test.axf" - 0 Error(s), 2 Warning(s).
+Program Size: Code=4160 RO-data=268 RW-data=52 ZI-data=1660  
+".\Objects\test.axf" - 0 Error(s), 4 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -54,8 +58,8 @@ Package Vendor: Keil
    * Component: Framework Version: 3.5.1
    * Component: USART Version: 3.5.0
    * Component: RCC Version: 3.5.0
-   * Component: GPIO Version: 1.2
    * Component: GPIO Version: 3.5.0
+   * Component: GPIO Version: 1.2
 
 <h2>Collection of Component include folders:</h2>
   C:\Users\jordan\Documents\GitHub\RemoteRadiator\RTE
@@ -68,16 +72,16 @@ Package Vendor: Keil
 <h2>Collection of Component Files used:</h2>
 
    * Component: ARM::CMSIS:DSP:1.4.6
-      Library file:  CMSIS\Lib\ARM\arm_cortexM3l_math.lib
       Include file:  CMSIS\Include\arm_math.h
+      Library file:  CMSIS\Lib\ARM\arm_cortexM3l_math.lib
 
    * Component: ARM::CMSIS:CORE:4.3.0
 
    * Component: Keil::Device:Startup:1.0.0
-      Source file:   Device\Source\ARM\startup_stm32f10x_md.s
       Source file:   Device\Source\ARM\STM32F1xx_OPT.s
-      Include file:  RTE_Driver\Config\RTE_Device.h
+      Source file:   Device\Source\ARM\startup_stm32f10x_md.s
       Source file:   Device\Source\system_stm32f10x.c
+      Include file:  RTE_Driver\Config\RTE_Device.h
 
    * Component: Keil::Device:StdPeriph Drivers:Framework:3.5.1
       Include file:  Device\StdPeriph_Driver\inc\misc.h
@@ -94,13 +98,13 @@ Package Vendor: Keil
       Source file:   Device\StdPeriph_Driver\src\stm32f10x_rcc.c
       Include file:  Device\StdPeriph_Driver\inc\stm32f10x_rcc.h
 
+   * Component: Keil::Device:StdPeriph Drivers:GPIO:3.5.0
+      Include file:  Device\StdPeriph_Driver\inc\stm32f10x_gpio.h
+      Source file:   Device\StdPeriph_Driver\src\stm32f10x_gpio.c
+
    * Component: Keil::Device:GPIO:1.2
       Include file:  RTE_Driver\GPIO_STM32F10x.h
       Source file:   RTE_Driver\GPIO_STM32F10x.c
-
-   * Component: Keil::Device:StdPeriph Drivers:GPIO:3.5.0
-      Source file:   Device\StdPeriph_Driver\src\stm32f10x_gpio.c
-      Include file:  Device\StdPeriph_Driver\inc\stm32f10x_gpio.h
 Build Time Elapsed:  00:00:01
 </pre>
 </body>

@@ -49,7 +49,7 @@ void freeUsartBuff(Buff_t *buff);
 void usartSendChar(USART_TypeDef *usart, char c);
 void usartSendString(USART_TypeDef *usart, char *s);
 void usartSendUint32(USART_TypeDef *usart, uint32_t data);
-char* usartGetString(Cmd_t* cmd, Buff_t *buff);
+BOOL usartGetString(Cmd_t* cmd, Buff_t *buff, char *temp);
 
 
 //ESP8266
@@ -71,6 +71,9 @@ int main(void){
 	
 	
 	usartSendString(USART1, "Configuration du module wifi:\r\n");
+	usartSendString(USART2, "AT+CWMODE_CUR=2\r\n");
+	
+	usartSendString(USART2, "AT+CWSAP=\"ESP8266\", \"1234567890\",6,3,1,0");
 	
 	usartSendString(USART2, "AT+CWMODE_CUR=2\r\n");
 	delay(1000);
@@ -79,7 +82,8 @@ int main(void){
 	usartSendString(USART2, "AT+CWDHCP_CUR=3\r\n");
 	delay(1000);
 	usartSendString(USART2, "AT+CIPAP_CUR?\r\n");
-
+	
+	
 	while(1){
 		taskUsart1Handler();
 		taskUsart2Handler();
@@ -211,15 +215,21 @@ void  usartSendUint32(USART_TypeDef *usart, uint32_t data){
 	usartSendString(usart, buffer);
 }
 
-char* usartGetString(Cmd_t* cmd, Buff_t *buff){
-	char *temp;
+BOOL usartGetString(Cmd_t* cmd, Buff_t *buff, char *temp){
+	BOOL ok = TRUE;
+	TimingDelay = 10;
+	SysTick_Config(SystemCoreClock/100);
 	while(buff->nb_Cmd <= 0){
 		allocateUsartBuff(cmd,buff);
+		if( TimingDelay == 0){
+			return(FALSE);
+		}
 	}
+	
 	temp = malloc(sizeof( *buff->first->data)*strlen( buff->first->data));
 	strcpy(temp, buff->first->data);
-	freeUsartBuff(buff);	
-	return(temp);
+	freeUsartBuff(buff);
+	return(TRUE);
 }
 
 void USART1_IRQHandler(void){
@@ -251,13 +261,12 @@ void USART2_IRQHandler(void){
 }
 
 void SysTick_Handler(void){
-	 if (TimingDelay != 0x00)
-   {
+	if (TimingDelay != 0x00){
 		TimingDelay--;
-   }else{
-			SysTick->CTRL = 0;
-		 usartSendChar(USART1, 'a');
-	 }
+		
+  }else{
+		SysTick->CTRL = 0;
+	}
 }
 
 void delay(volatile uint32_t ms){
@@ -346,7 +355,7 @@ BOOL sendAtCmd(char *at){
 	char *rep;
 	do{
 		usartSendString(USART2, at);
-		while((rep = usartGetString(_usart2Cmd, &_usart2Buff)) != NULL){
+		while(usartGetString(_usart2Cmd, &_usart2Buff,rep) == TRUE){
 			if(strncpy(rep, "OK", 2))
 				err = FALSE;
 		}
