@@ -33,22 +33,27 @@ typedef struct BUFF_T{
 }Buff_t;
 
 //====================================================================
+//Systeme
 void initSystem(void);
 void initApp(void);
 void initUSART1(void);
 void initUSART2(void);
 void delay(volatile uint32_t ms);
 
+//USART
 Cmd_t* createCmdStruct(Cmd_t* prev);
 void allocateUsartBuff(Cmd_t* tempCmd, Buff_t *usartBuff);
 void taskUsart1Handler(void);
 void taskUsart2Handler(void);
 void freeUsartBuff(Buff_t *buff);
-
 void usartSendChar(USART_TypeDef *usart, char c);
 void usartSendString(USART_TypeDef *usart, char *s);
 void usartSendUint32(USART_TypeDef *usart, uint32_t data);
 char* usartGetString(Cmd_t* cmd, Buff_t *buff);
+
+
+//ESP8266
+BOOL sendAtCmd(char *at);
 
 //=====================================================================
 
@@ -66,13 +71,13 @@ int main(void){
 	
 	
 	usartSendString(USART1, "Configuration du module wifi:\r\n");
-
+	
 	usartSendString(USART2, "AT+CWMODE_CUR=2\r\n");
-	
-	usartSendString(USART2, "AT+CWSAP=\"ESP8266\", \"1234567890\",6,3,1,0");
-	
+	delay(1000);
+	usartSendString(USART2, "AT+CWSAP=\"ESP8266\",\"1234567890\",6,3,1,0\r\n");
+	delay(1000);
 	usartSendString(USART2, "AT+CWDHCP_CUR=3\r\n");
-
+	delay(1000);
 	usartSendString(USART2, "AT+CIPAP_CUR?\r\n");
 
 	while(1){
@@ -333,4 +338,17 @@ void taskUsart2Handler(void){
 			}
 		}
 	allocateUsartBuff(_usart2Cmd, &_usart2Buff);
+}
+
+
+BOOL sendAtCmd(char *at){
+	BOOL err = TRUE;
+	char *rep;
+	do{
+		usartSendString(USART2, at);
+		while((rep = usartGetString(_usart2Cmd, &_usart2Buff)) != NULL){
+			if(strncpy(rep, "OK", 2))
+				err = FALSE;
+		}
+	}while(err == TRUE);
 }
