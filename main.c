@@ -66,7 +66,8 @@ int main(void){
 	
 	
 	usartSendString(USART1, "Configuration du module wifi:\r\n");
-
+	usartGetString(_usart1Cmd, &_usart1Buff);
+	usartSendString(USART1, "Done\r\n");
 	usartSendString(USART2, "AT+CWMODE_CUR=2\r\n");
 	
 	usartSendString(USART2, "AT+CWSAP=\"ESP8266\", \"1234567890\",6,3,1,0");
@@ -74,7 +75,8 @@ int main(void){
 	usartSendString(USART2, "AT+CWDHCP_CUR=3\r\n");
 
 	usartSendString(USART2, "AT+CIPAP_CUR?\r\n");
-
+	
+	
 	while(1){
 		taskUsart1Handler();
 		taskUsart2Handler();
@@ -208,9 +210,14 @@ void  usartSendUint32(USART_TypeDef *usart, uint32_t data){
 
 char* usartGetString(Cmd_t* cmd, Buff_t *buff){
 	char *temp;
+	TimingDelay = 10;
+	SysTick_Config(SystemCoreClock/100);
 	while(buff->nb_Cmd <= 0){
 		allocateUsartBuff(cmd,buff);
+		if( TimingDelay == 0)
+			return(NULL);
 	}
+	
 	temp = malloc(sizeof( *buff->first->data)*strlen( buff->first->data));
 	strcpy(temp, buff->first->data);
 	freeUsartBuff(buff);	
@@ -246,13 +253,12 @@ void USART2_IRQHandler(void){
 }
 
 void SysTick_Handler(void){
-	 if (TimingDelay != 0x00)
-   {
+	if (TimingDelay != 0x00){
 		TimingDelay--;
-   }else{
-			SysTick->CTRL = 0;
-		 usartSendChar(USART1, 'a');
-	 }
+		
+  }else{
+		SysTick->CTRL = 0;
+	}
 }
 
 void delay(volatile uint32_t ms){
