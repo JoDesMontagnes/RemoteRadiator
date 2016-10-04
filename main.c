@@ -48,7 +48,7 @@ void freeUsartBuff(Buff_t *buff);
 void usartSendChar(USART_TypeDef *usart, char c);
 void usartSendString(USART_TypeDef *usart, char *s);
 void usartSendUint32(USART_TypeDef *usart, uint32_t data);
-char* usartGetString(Cmd_t* cmd, Buff_t *buff);
+BOOL usartGetString(Cmd_t* cmd, Buff_t *buff, char *temp);
 
 //=====================================================================
 
@@ -66,7 +66,7 @@ int main(void){
 	
 	
 	usartSendString(USART1, "Configuration du module wifi:\r\n");
-	usartGetString(_usart1Cmd, &_usart1Buff);
+	usartGetString(_usart1Cmd, &_usart1Buff, recep);
 	usartSendString(USART1, "Done\r\n");
 	usartSendString(USART2, "AT+CWMODE_CUR=2\r\n");
 	
@@ -208,20 +208,21 @@ void  usartSendUint32(USART_TypeDef *usart, uint32_t data){
 	usartSendString(usart, buffer);
 }
 
-char* usartGetString(Cmd_t* cmd, Buff_t *buff){
-	char *temp;
+BOOL usartGetString(Cmd_t* cmd, Buff_t *buff, char *temp){
+	BOOL ok = TRUE;
 	TimingDelay = 10;
 	SysTick_Config(SystemCoreClock/100);
 	while(buff->nb_Cmd <= 0){
 		allocateUsartBuff(cmd,buff);
-		if( TimingDelay == 0)
-			return(NULL);
+		if( TimingDelay == 0){
+			return(FALSE);
+		}
 	}
 	
 	temp = malloc(sizeof( *buff->first->data)*strlen( buff->first->data));
 	strcpy(temp, buff->first->data);
-	freeUsartBuff(buff);	
-	return(temp);
+	freeUsartBuff(buff);
+	return(TRUE);
 }
 
 void USART1_IRQHandler(void){
