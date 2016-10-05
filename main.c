@@ -60,36 +60,24 @@ int main(void){
 	
 	
 	usartSendString(USART1, "Configuration du module wifi...");
-	
+	sendAtCmd("AT+RST\r\n");
+	sendAtCmd("ATE0\r\n");
 	sendAtCmd("AT+CWMODE_CUR=2\r\n");
-	sendAtCmd( "AT+CWSAP=\"ESP8266\", \"1234567890\",6,3,1,0");
-	sendAtCmd( "AT+CWMODE_CUR=2\r\n");
 	sendAtCmd( "AT+CWSAP=\"ESP8266\",\"1234567890\",6,3,1,0\r\n");
-	sendAtCmd( "AT+CWDHCP_CUR=3\r\n");
+	sendAtCmd( "AT+CWDHCP_CUR=2,1\r\n");
 	sendAtCmd( "AT+CIPAP_CUR?\r\n");
 	
 	usartSendString(USART1, "OK\r\n");
 	
 	while(1){
-		usartGetString(&_consolBuff, recep);
-		usartSendString(USART1, recep);
+		if(usartGetString(&_consolBuff, recep) == TRUE)
+			usartSendString(USART2, recep);
 		
+		if(usartGetString(&_wifiBuff, recep) == TRUE)
+			usartSendString(USART1, recep);
 		
 		if(_consolBuff.full == TRUE){
-			usartSendString(USART1, "Buffer's console Full \r\n");
-			_consolBuff.full = FALSE;
-			_consolBuff.id_read = 0;
-			_consolBuff.id_write = 0;
-			_consolBuff.nb_Cmd = 0;
-		}
-		
-		
-		if(_wifiBuff.full == TRUE){
-			usartSendString(USART1, "Buffer's wifi Full \r\n");
-			_wifiBuff.full = FALSE;
-			_wifiBuff.id_read = 0;
-			_wifiBuff.id_write = 0;
-			_wifiBuff.nb_Cmd = 0;
+			_consolBuff.nb_Cmd++;
 		}
 	}
 	
@@ -221,7 +209,7 @@ void  usartSendUint32(USART_TypeDef *usart, uint32_t data){
 BOOL usartGetString(Buff_t *buff, char resp[MAX_USART_BUFF]){
 	unsigned int size ;
 	TimingDelay = 1000;
-	SysTick_Config(SystemCoreClock/100);
+	SysTick_Config(SystemCoreClock/1000);
 	while(buff->nb_Cmd <= 0){
 		if( TimingDelay == 0){
 			resp[0]= '\0'; //Retourne chaine vide
@@ -295,13 +283,19 @@ void delay(volatile uint32_t ms){
 
 BOOL sendAtCmd(char *at){
 	uint8_t cpt = 3;
-	char *rep;
+	char rep[MAX_USART_BUFF];
 	do{
+		usartSendString(USART1, at);
+		usartSendString(USART1, " : ");
 		usartSendString(USART2, at);
 		while(usartGetString(&_wifiBuff,rep) == TRUE){
 			usartSendString(USART1, rep);
-			if(strncpy(rep, "OK", 2)){
+			if(strncmp(rep, "OK", 2) == 0){
 				return(TRUE);				
+			}else if (strncmp(rep, "ERROR", 2) == 0){
+				delay(10);
+				sendAtCmd("AT\r\n");
+			  break;
 			}
 		}
 		cpt--;

@@ -1,4 +1,4 @@
-;#<FEEDBACK># ARM Linker, 5060061: Last Updated: Wed Oct 05 17:47:23 2016
+;#<FEEDBACK># ARM Linker, 5060061: Last Updated: Wed Oct 05 18:27:48 2016
 ;VERSION 0.2
 ;FILE gpio_stm32f10x.o
 GPIO_AFConfigure <= USED 0
@@ -12,7 +12,6 @@ __asm___16_GPIO_STM32F10x_c_7565b535____RRX <= USED 0
 __asm___6_main_c_main____REV16 <= USED 0
 __asm___6_main_c_main____REVSH <= USED 0
 __asm___6_main_c_main____RRX <= USED 0
-delay <= USED 0
 usartSendUint32 <= USED 0
 ;FILE misc.o
 NVIC_Init <= USED 0
