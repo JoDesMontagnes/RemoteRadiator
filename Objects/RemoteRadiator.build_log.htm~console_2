@@ -124,7 +124,7 @@ Package Vendor: Keil
    * Component: Keil::Device:GPIO:1.2
       Source file:   RTE_Driver\GPIO_STM32F10x.c
       Include file:  RTE_Driver\GPIO_STM32F10x.h
-Build Time Elapsed:  00:00:08
+Build Time Elapsed:  00:00:06
 </pre>
 </body>
 </html>
