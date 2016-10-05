@@ -58,7 +58,7 @@ int main(void){
 	initUSART1();
 	initUSART2();
 	
-	
+	some work
 	usartSendString(USART1, "Configuration du module wifi...");
 	sendAtCmd("AT+RST\r\n");
 	sendAtCmd("ATE0\r\n");
