@@ -57,23 +57,6 @@ int main(void){
 		usartGetString(&_consolBuff, recep);
 		usartSendString(USART1, recep);
 		
-		
-		if(_consolBuff.full == TRUE){
-			usartSendString(USART1, "Buffer's console Full \r\n");
-			_consolBuff.full = FALSE;
-			_consolBuff.id_read = 0;
-			_consolBuff.id_write = 0;
-			_consolBuff.nb_Cmd = 0;
-		}
-		
-		
-		if(_wifiBuff.full == TRUE){
-			usartSendString(USART1, "Buffer's wifi Full \r\n");
-			_wifiBuff.full = FALSE;
-			_wifiBuff.id_read = 0;
-			_wifiBuff.id_write = 0;
-			_wifiBuff.nb_Cmd = 0;
-		}
 	}
 	
 	
@@ -243,7 +226,11 @@ void USART2_IRQHandler(void){
 }
 
 void addCharToBuffer(Buff_t *buff, USART_TypeDef *usart){
-	if(buff->id_write >= MAX_USART_BUFF-1){
+	  if(buff->full == TRUE && buff->id_read != buff->id_write){
+			buff->full = FALSE;
+		}
+		
+	  if(buff->id_write >= MAX_USART_BUFF-1){
 			buff->id_write = 0;
 		}
 		
@@ -258,6 +245,10 @@ void addCharToBuffer(Buff_t *buff, USART_TypeDef *usart){
 			buff->id_write++;
 		}else{
 			buff->full = TRUE;
+			buff->data[buff->id_write] = '\0';
+			//On force la lecture pour vider
+			if(buff->nb_Cmd == 0)
+				buff->nb_Cmd = 1;
 		}
 }
 

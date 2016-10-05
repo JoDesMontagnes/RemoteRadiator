@@ -499,14 +499,14 @@ Image Symbol Table
     i.USART_ReceiveData                      0x08000ad8   Section        0  stm32f10x_usart.o(i.USART_ReceiveData)
     i.USART_SendData                         0x08000ae2   Section        0  stm32f10x_usart.o(i.USART_SendData)
     i.addCharToBuffer                        0x08000aea   Section        0  main.o(i.addCharToBuffer)
-    i.initApp                                0x08000b68   Section        0  main.o(i.initApp)
-    i.initSystem                             0x08000b94   Section        0  main.o(i.initSystem)
-    i.initUSART1                             0x08000be0   Section        0  main.o(i.initUSART1)
-    i.initUSART2                             0x08000c74   Section        0  main.o(i.initUSART2)
-    i.main                                   0x08000d0c   Section        0  main.o(i.main)
-    i.usartGetString                         0x08000dcc   Section        0  main.o(i.usartGetString)
-    i.usartSendChar                          0x08000e84   Section        0  main.o(i.usartSendChar)
-    i.usartSendString                        0x08000ea2   Section        0  main.o(i.usartSendString)
+    i.initApp                                0x08000b90   Section        0  main.o(i.initApp)
+    i.initSystem                             0x08000bbc   Section        0  main.o(i.initSystem)
+    i.initUSART1                             0x08000c08   Section        0  main.o(i.initUSART1)
+    i.initUSART2                             0x08000c9c   Section        0  main.o(i.initUSART2)
+    i.main                                   0x08000d34   Section        0  main.o(i.main)
+    i.usartGetString                         0x08000d78   Section        0  main.o(i.usartGetString)
+    i.usartSendChar                          0x08000e30   Section        0  main.o(i.usartSendChar)
+    i.usartSendString                        0x08000e4e   Section        0  main.o(i.usartSendString)
     .data                                    0x20000000   Section        4  main.o(.data)
     TimingDelay                              0x20000000   Data           4  main.o(.data)
     .data                                    0x20000004   Section       20  stm32f10x_rcc.o(.data)
@@ -712,17 +712,17 @@ Image Symbol Table
     USART_Init                               0x08000a01   Thumb Code   210  stm32f10x_usart.o(i.USART_Init)
     USART_ReceiveData                        0x08000ad9   Thumb Code    10  stm32f10x_usart.o(i.USART_ReceiveData)
     USART_SendData                           0x08000ae3   Thumb Code     8  stm32f10x_usart.o(i.USART_SendData)
-    addCharToBuffer                          0x08000aeb   Thumb Code   124  main.o(i.addCharToBuffer)
-    initApp                                  0x08000b69   Thumb Code    36  main.o(i.initApp)
-    initSystem                               0x08000b95   Thumb Code    74  main.o(i.initSystem)
-    initUSART1                               0x08000be1   Thumb Code   140  main.o(i.initUSART1)
-    initUSART2                               0x08000c75   Thumb Code   142  main.o(i.initUSART2)
-    main                                     0x08000d0d   Thumb Code   114  main.o(i.main)
-    usartGetString                           0x08000dcd   Thumb Code   176  main.o(i.usartGetString)
-    usartSendChar                            0x08000e85   Thumb Code    30  main.o(i.usartSendChar)
-    usartSendString                          0x08000ea3   Thumb Code    26  main.o(i.usartSendString)
-    Region$$Table$$Base                      0x08000ebc   Number         0  anon$$obj.o(Region$$Table)
-    Region$$Table$$Limit                     0x08000edc   Number         0  anon$$obj.o(Region$$Table)
+    addCharToBuffer                          0x08000aeb   Thumb Code   166  main.o(i.addCharToBuffer)
+    initApp                                  0x08000b91   Thumb Code    36  main.o(i.initApp)
+    initSystem                               0x08000bbd   Thumb Code    74  main.o(i.initSystem)
+    initUSART1                               0x08000c09   Thumb Code   140  main.o(i.initUSART1)
+    initUSART2                               0x08000c9d   Thumb Code   142  main.o(i.initUSART2)
+    main                                     0x08000d35   Thumb Code    46  main.o(i.main)
+    usartGetString                           0x08000d79   Thumb Code   176  main.o(i.usartGetString)
+    usartSendChar                            0x08000e31   Thumb Code    30  main.o(i.usartSendChar)
+    usartSendString                          0x08000e4f   Thumb Code    26  main.o(i.usartSendString)
+    Region$$Table$$Base                      0x08000e68   Number         0  anon$$obj.o(Region$$Table)
+    Region$$Table$$Limit                     0x08000e88   Number         0  anon$$obj.o(Region$$Table)
     SystemCoreClock                          0x20000018   Data           4  system_stm32f10x.o(.data)
     AHBPrescTable                            0x2000001c   Data          16  system_stm32f10x.o(.data)
     _wifiBuff                                0x2000002c   Data         272  main.o(.bss)
@@ -738,9 +738,9 @@ Memory Map of the image
 
   Image Entry point : 0x08000189
 
-  Load Region LR_1 (Base: 0x08000000, Size: 0x00000f08, Max: 0xffffffff, ABSOLUTE)
+  Load Region LR_1 (Base: 0x08000000, Size: 0x00000eb4, Max: 0xffffffff, ABSOLUTE)
 
-    Execution Region ER_RO (Base: 0x08000000, Size: 0x00000edc, Max: 0xffffffff, ABSOLUTE)
+    Execution Region ER_RO (Base: 0x08000000, Size: 0x00000e88, Max: 0xffffffff, ABSOLUTE)
 
     Base Addr    Size         Type   Attr      Idx    E Section Name        Object
 
@@ -836,18 +836,17 @@ Memory Map of the image
     0x08000a00   0x000000d8   Code   RO          575    i.USART_Init        stm32f10x_usart.o
     0x08000ad8   0x0000000a   Code   RO          582    i.USART_ReceiveData  stm32f10x_usart.o
     0x08000ae2   0x00000008   Code   RO          585    i.USART_SendData    stm32f10x_usart.o
-    0x08000aea   0x0000007c   Code   RO            9    i.addCharToBuffer   main.o
-    0x08000b66   0x00000002   PAD
-    0x08000b68   0x0000002c   Code   RO           11    i.initApp           main.o
-    0x08000b94   0x0000004a   Code   RO           12    i.initSystem        main.o
-    0x08000bde   0x00000002   PAD
-    0x08000be0   0x00000094   Code   RO           13    i.initUSART1        main.o
-    0x08000c74   0x00000098   Code   RO           14    i.initUSART2        main.o
-    0x08000d0c   0x000000c0   Code   RO           15    i.main              main.o
-    0x08000dcc   0x000000b8   Code   RO           16    i.usartGetString    main.o
-    0x08000e84   0x0000001e   Code   RO           17    i.usartSendChar     main.o
-    0x08000ea2   0x0000001a   Code   RO           18    i.usartSendString   main.o
-    0x08000ebc   0x00000020   Data   RO         1062    Region$$Table       anon$$obj.o
+    0x08000aea   0x000000a6   Code   RO            9    i.addCharToBuffer   main.o
+    0x08000b90   0x0000002c   Code   RO           11    i.initApp           main.o
+    0x08000bbc   0x0000004a   Code   RO           12    i.initSystem        main.o
+    0x08000c06   0x00000002   PAD
+    0x08000c08   0x00000094   Code   RO           13    i.initUSART1        main.o
+    0x08000c9c   0x00000098   Code   RO           14    i.initUSART2        main.o
+    0x08000d34   0x00000044   Code   RO           15    i.main              main.o
+    0x08000d78   0x000000b8   Code   RO           16    i.usartGetString    main.o
+    0x08000e30   0x0000001e   Code   RO           17    i.usartSendChar     main.o
+    0x08000e4e   0x0000001a   Code   RO           18    i.usartSendString   main.o
+    0x08000e68   0x00000020   Data   RO         1062    Region$$Table       anon$$obj.o
 
 
     Execution Region ER_RW (Base: 0x20000000, Size: 0x0000002c, Max: 0xffffffff, ABSOLUTE)
@@ -877,7 +876,7 @@ Image component sizes
 
       Code (inc. data)   RO Data    RW Data    ZI Data      Debug   Object Name
 
-      1200        142          0          4        544     259830   main.o
+      1118         86          0          4        544     259802   main.o
         64         26        236          0       1536        812   startup_stm32f10x_md.o
        278          0          0          0          0       2076   stm32f10x_gpio.o
        580         80          0         20          0       9951   stm32f10x_rcc.o
@@ -885,9 +884,9 @@ Image component sizes
        328         28          0         20          0       2253   system_stm32f10x.o
 
     ----------------------------------------------------------------------
-      2930        282        268         44       2080     282077   Object Totals
+      2846        226        268         44       2080     282049   Object Totals
          0          0         32          0          0          0   (incl. Generated)
-         8          0          0          0          0          0   (incl. Padding)
+         6          0          0          0          0          0   (incl. Padding)
 
     ----------------------------------------------------------------------
 
@@ -939,15 +938,15 @@ Image component sizes
 
       Code (inc. data)   RO Data    RW Data    ZI Data      Debug   
 
-      3536        298        268         44       2180     280797   Grand Totals
-      3536        298        268         44       2180     280797   ELF Image Totals
-      3536        298        268         44          0          0   ROM Totals
+      3452        242        268         44       2180     280769   Grand Totals
+      3452        242        268         44       2180     280769   ELF Image Totals
+      3452        242        268         44          0          0   ROM Totals
 
 ==============================================================================
 
-    Total RO  Size (Code + RO Data)                 3804 (   3.71kB)
+    Total RO  Size (Code + RO Data)                 3720 (   3.63kB)
     Total RW  Size (RW Data + ZI Data)              2224 (   2.17kB)
-    Total ROM Size (Code + RO Data + RW Data)       3848 (   3.76kB)
+    Total ROM Size (Code + RO Data + RW Data)       3764 (   3.68kB)
 
 ==============================================================================
 
