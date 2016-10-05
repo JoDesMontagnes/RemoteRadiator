@@ -56,12 +56,23 @@ int main(void){
 	while(1){
 		usartGetString(&_consolBuff, recep);
 		usartSendString(USART1, recep);
+		
+		
 		if(_consolBuff.full == TRUE){
-			usartSendString(USART1, "Buffer Full \r\n");
+			usartSendString(USART1, "Buffer's console Full \r\n");
 			_consolBuff.full = FALSE;
 			_consolBuff.id_read = 0;
 			_consolBuff.id_write = 0;
 			_consolBuff.nb_Cmd = 0;
+		}
+		
+		
+		if(_wifiBuff.full == TRUE){
+			usartSendString(USART1, "Buffer's wifi Full \r\n");
+			_wifiBuff.full = FALSE;
+			_wifiBuff.id_read = 0;
+			_wifiBuff.id_write = 0;
+			_wifiBuff.nb_Cmd = 0;
 		}
 	}
 	
@@ -218,7 +229,7 @@ BOOL usartGetString(Buff_t *buff, char resp[MAX_USART_BUFF]){
 
 void USART1_IRQHandler(void){
 	if(USART_GetITStatus(USART1, USART_IT_RXNE) == SET){
-		//retour au début si arrivé message
+		//retour au debut si on arrive a la limite
 		if(_consolBuff.id_write >= MAX_USART_BUFF-1){
 			_consolBuff.id_write = 0;
 		}
@@ -243,6 +254,23 @@ void USART1_IRQHandler(void){
 
 void USART2_IRQHandler(void){
 	if(USART_GetITStatus(USART2, USART_IT_RXNE) == SET){
+		//retour au debut si on arrive a la limite
+		if(_wifiBuff.id_write >= MAX_USART_BUFF-1){
+			_wifiBuff.id_write = 0;
+		}
+		
+		if(_wifiBuff.id_write >= _wifiBuff.id_read || _wifiBuff.id_write+2 < _wifiBuff.id_read){
+			_wifiBuff.full = FALSE;
+			_wifiBuff.data[_wifiBuff.id_write] = USART_ReceiveData(USART1);
+			if(_wifiBuff.data[_wifiBuff.id_write] == '\n'){
+				_wifiBuff.id_write++;
+				_wifiBuff.data[_wifiBuff.id_write] = '\0';
+				_wifiBuff.nb_Cmd++;
+			}
+			_wifiBuff.id_write++;
+		}else{
+			_wifiBuff.full = TRUE;
+		}
 		
 		USART_ClearITPendingBit(USART2, USART_IT_RXNE);
 	}
