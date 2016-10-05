@@ -32,7 +32,7 @@ void initApp(void);
 void initUSART1(void);
 void initUSART2(void);
 void delay(volatile uint32_t ms);
-
+void addCharToBuffer(Buff_t *buff, USART_TypeDef *usart);
 
 void usartSendChar(USART_TypeDef *usart, char c);
 void usartSendString(USART_TypeDef *usart, char *s);
@@ -229,52 +229,36 @@ BOOL usartGetString(Buff_t *buff, char resp[MAX_USART_BUFF]){
 
 void USART1_IRQHandler(void){
 	if(USART_GetITStatus(USART1, USART_IT_RXNE) == SET){
-		//retour au debut si on arrive a la limite
-		if(_consolBuff.id_write >= MAX_USART_BUFF-1){
-			_consolBuff.id_write = 0;
-		}
-		
-		if(_consolBuff.id_write >= _consolBuff.id_read || _consolBuff.id_write+2 < _consolBuff.id_read){
-			_consolBuff.full = FALSE;
-			_consolBuff.data[_consolBuff.id_write] = USART_ReceiveData(USART1);
-			if(_consolBuff.data[_consolBuff.id_write] == '\n'){
-				_consolBuff.id_write++;
-				_consolBuff.data[_consolBuff.id_write] = '\0';
-				_consolBuff.nb_Cmd++;
-			}
-			_consolBuff.id_write++;
-		}else{
-			_consolBuff.full = TRUE;
-		}
-		
-		
+		addCharToBuffer(&_consolBuff,USART1);
 		USART_ClearITPendingBit(USART1, USART_IT_RXNE);
 	}
 }
 
 void USART2_IRQHandler(void){
 	if(USART_GetITStatus(USART2, USART_IT_RXNE) == SET){
-		//retour au debut si on arrive a la limite
-		if(_wifiBuff.id_write >= MAX_USART_BUFF-1){
-			_wifiBuff.id_write = 0;
-		}
-		
-		if(_wifiBuff.id_write >= _wifiBuff.id_read || _wifiBuff.id_write+2 < _wifiBuff.id_read){
-			_wifiBuff.full = FALSE;
-			_wifiBuff.data[_wifiBuff.id_write] = USART_ReceiveData(USART1);
-			if(_wifiBuff.data[_wifiBuff.id_write] == '\n'){
-				_wifiBuff.id_write++;
-				_wifiBuff.data[_wifiBuff.id_write] = '\0';
-				_wifiBuff.nb_Cmd++;
-			}
-			_wifiBuff.id_write++;
-		}else{
-			_wifiBuff.full = TRUE;
-		}
-		
+		addCharToBuffer(&_wifiBuff,USART2);
 		USART_ClearITPendingBit(USART2, USART_IT_RXNE);
 	}
 	
+}
+
+void addCharToBuffer(Buff_t *buff, USART_TypeDef *usart){
+	if(buff->id_write >= MAX_USART_BUFF-1){
+			buff->id_write = 0;
+		}
+		
+		if(buff->id_write >= buff->id_read || buff->id_write+2 < buff->id_read){
+			buff->full = FALSE;
+			buff->data[buff->id_write] = USART_ReceiveData(usart);
+			if(buff->data[buff->id_write] == '\n'){
+				buff->id_write++;
+				buff->data[buff->id_write] = '\0';
+				buff->nb_Cmd++;
+			}
+			buff->id_write++;
+		}else{
+			buff->full = TRUE;
+		}
 }
 
 void SysTick_Handler(void){
