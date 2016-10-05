@@ -79,6 +79,7 @@ int main(void){
 		if(_consolBuff.full == TRUE){
 			_consolBuff.nb_Cmd++;
 		}
+
 	}
 	
 	
@@ -248,7 +249,11 @@ void USART2_IRQHandler(void){
 }
 
 void addCharToBuffer(Buff_t *buff, USART_TypeDef *usart){
-	if(buff->id_write >= MAX_USART_BUFF-1){
+	  if(buff->full == TRUE && buff->id_read != buff->id_write){
+			buff->full = FALSE;
+		}
+		
+	  if(buff->id_write >= MAX_USART_BUFF-1){
 			buff->id_write = 0;
 		}
 		
@@ -263,6 +268,10 @@ void addCharToBuffer(Buff_t *buff, USART_TypeDef *usart){
 			buff->id_write++;
 		}else{
 			buff->full = TRUE;
+			buff->data[buff->id_write] = '\0';
+			//On force la lecture pour vider
+			if(buff->nb_Cmd == 0)
+				buff->nb_Cmd = 1;
 		}
 }
 
