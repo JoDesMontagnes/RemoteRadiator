@@ -13,24 +13,18 @@ alors qu'on ne fait que 2 getString et on envoit que deux "salut"
 	#define HSE_VALUE 8000000
 #endif
 
-#define MAX_USART_BUFF 100
+#define MAX_USART_BUFF 256
 //====================================================================
 typedef enum {FALSE, TRUE}BOOL;
 
-typedef struct CMD_T{
-	int lenght;
-	int id;
-	BOOL cmd_available;
+typedef struct{
+	BOOL full;
 	char data[MAX_USART_BUFF];
-  struct CMD_T *next;
-	struct CMD_T *prev;
-}Cmd_t;
-
-typedef struct BUFF_T{
 	int nb_Cmd;
-	Cmd_t *first;
-	Cmd_t *last;
+	int id_read;
+	int id_write;
 }Buff_t;
+
 
 //====================================================================
 //Systeme
@@ -39,17 +33,13 @@ void initApp(void);
 void initUSART1(void);
 void initUSART2(void);
 void delay(volatile uint32_t ms);
+void addCharToBuffer(Buff_t *buff, USART_TypeDef *usart);
 
-//USART
-Cmd_t* createCmdStruct(Cmd_t* prev);
-void allocateUsartBuff(Cmd_t* tempCmd, Buff_t *usartBuff);
-void taskUsart1Handler(void);
-void taskUsart2Handler(void);
-void freeUsartBuff(Buff_t *buff);
+
 void usartSendChar(USART_TypeDef *usart, char c);
 void usartSendString(USART_TypeDef *usart, char *s);
 void usartSendUint32(USART_TypeDef *usart, uint32_t data);
-BOOL usartGetString(Cmd_t* cmd, Buff_t *buff, char *temp);
+BOOL usartGetString(Buff_t* buff, char resp[MAX_USART_BUFF]);
 
 
 //ESP8266
@@ -58,12 +48,11 @@ BOOL sendAtCmd(char *at);
 //=====================================================================
 
 
- static Buff_t _usart1Buff, _usart2Buff;
- Cmd_t *_usart1Cmd, *_usart2Cmd;
+ Buff_t _wifiBuff, _consolBuff;
  static volatile uint32_t TimingDelay;
 
 int main(void){
-	char *recep;
+	char recep[MAX_USART_BUFF];
 	initSystem();
 	initApp();
 	initUSART1();
@@ -78,11 +67,28 @@ int main(void){
 	sendAtCmd( "AT+CWDHCP_CUR=3\r\n");
 	sendAtCmd( "AT+CIPAP_CUR?\r\n");
 	
-	
 	while(1){
-		taskUsart1Handler();
-		taskUsart2Handler();
-}
+		usartGetString(&_consolBuff, recep);
+		usartSendString(USART1, recep);
+		
+		
+		if(_consolBuff.full == TRUE){
+			usartSendString(USART1, "Buffer's console Full \r\n");
+			_consolBuff.full = FALSE;
+			_consolBuff.id_read = 0;
+			_consolBuff.id_write = 0;
+			_consolBuff.nb_Cmd = 0;
+		}
+		
+		
+		if(_wifiBuff.full == TRUE){
+			usartSendString(USART1, "Buffer's wifi Full \r\n");
+			_wifiBuff.full = FALSE;
+			_wifiBuff.id_read = 0;
+			_wifiBuff.id_write = 0;
+			_wifiBuff.nb_Cmd = 0;
+		}
+	}
 	
 	
 	return(0);
@@ -108,14 +114,12 @@ void initSystem(void){
 }
 
 void initApp(void){
-	_usart1Buff.nb_Cmd = 0;
-	_usart1Buff.last = _usart1Buff.first = NULL;
-	_usart1Cmd = createCmdStruct(NULL);
+	_wifiBuff.full = FALSE;
+	_wifiBuff.id_read = _wifiBuff.id_write = _wifiBuff.nb_Cmd = 0 ;
 
 	
-	_usart2Buff.nb_Cmd = 0;
-	_usart2Buff.last = _usart2Buff.first = NULL;
-	_usart2Cmd = createCmdStruct(NULL);
+	_consolBuff.full = FALSE;
+	_consolBuff.id_read = _consolBuff.id_write = _consolBuff.nb_Cmd = 0 ;
 }
 
 void initUSART1(void){
@@ -210,49 +214,65 @@ void  usartSendUint32(USART_TypeDef *usart, uint32_t data){
 	usartSendString(usart, buffer);
 }
 
-BOOL usartGetString(Cmd_t* cmd, Buff_t *buff, char *resp){
-	BOOL ok = TRUE;
-	TimingDelay = 20;
+
+BOOL usartGetString(Buff_t *buff, char resp[MAX_USART_BUFF]){
+	unsigned int size ;
+	TimingDelay = 1000;
 	SysTick_Config(SystemCoreClock/100);
 	while(buff->nb_Cmd <= 0){
-		allocateUsartBuff(cmd,buff);
 		if( TimingDelay == 0){
+			resp[0]= '\0'; //Retourne chaine vide
 			return(FALSE);
 		}
 	}
-	resp = malloc(sizeof( *buff->first->data)*strlen( buff->first->data));
-	usartSendString(USART1, resp);
-	strcpy(resp, buff->first->data);
-	freeUsartBuff(buff);
+	//Vérification retour au début
+  size = strlen(&buff->data[buff->id_read]) + 1;
+	if(size+buff->id_read == MAX_USART_BUFF){
+		strncpy(resp, &buff->data[buff->id_read], size);
+		buff->id_read = 0;
+		size = strlen(&buff->data[buff->id_read]) + 1;
+		strncat(resp,&buff->data[buff->id_read], size);
+	}else{
+		strncpy(resp, &buff->data[buff->id_read], size);
+	}
+	
+	buff->nb_Cmd--;
+	buff->id_read+=size;
 	return(TRUE);
 }
 
 void USART1_IRQHandler(void){
 	if(USART_GetITStatus(USART1, USART_IT_RXNE) == SET){
-		
-		//Save char in the buffer
-		_usart1Cmd->data[_usart1Cmd->id] = USART_ReceiveData(USART1);
-		if(_usart1Cmd->data[_usart1Cmd->id] == '\n'){
-			_usart1Cmd->data[_usart1Cmd->id+1] = '\0';
-			_usart1Cmd->cmd_available = TRUE;
-		}
-		_usart1Cmd->id++;
-		
+		addCharToBuffer(&_consolBuff,USART1);
 		USART_ClearITPendingBit(USART1, USART_IT_RXNE);
 	}
 }
 
 void USART2_IRQHandler(void){
 	if(USART_GetITStatus(USART2, USART_IT_RXNE) == SET){
-		_usart2Cmd->data[_usart2Cmd->id] = USART_ReceiveData(USART2);
-		if(_usart2Cmd->data[_usart2Cmd->id] == '\n'){
-			_usart2Cmd->data[_usart2Cmd->id+1] = '\0';
-			_usart2Cmd->cmd_available = TRUE;
-		}
-		_usart2Cmd->id++;
+		addCharToBuffer(&_wifiBuff,USART2);
 		USART_ClearITPendingBit(USART2, USART_IT_RXNE);
 	}
 	
+}
+
+void addCharToBuffer(Buff_t *buff, USART_TypeDef *usart){
+	if(buff->id_write >= MAX_USART_BUFF-1){
+			buff->id_write = 0;
+		}
+		
+		if(buff->id_write >= buff->id_read || buff->id_write+2 < buff->id_read){
+			buff->full = FALSE;
+			buff->data[buff->id_write] = USART_ReceiveData(usart);
+			if(buff->data[buff->id_write] == '\n'){
+				buff->id_write++;
+				buff->data[buff->id_write] = '\0';
+				buff->nb_Cmd++;
+			}
+			buff->id_write++;
+		}else{
+			buff->full = TRUE;
+		}
 }
 
 void SysTick_Handler(void){
@@ -270,87 +290,12 @@ void delay(volatile uint32_t ms){
 	while(TimingDelay != 0);
 }
 
-	
-Cmd_t* createCmdStruct(Cmd_t* prev){
-	Cmd_t* temp = malloc(sizeof(Cmd_t));
-	temp->id = 0;
-	temp->cmd_available = FALSE;
-	temp->lenght = 0;
-	temp->next = NULL;
-	temp->prev = prev;
-	return(temp);
-}
-
-void allocateUsartBuff(Cmd_t* tempCmd, Buff_t *usartBuff){
-		
-		if(tempCmd->cmd_available == TRUE){
-				Cmd_t *newCmd = createCmdStruct(NULL);
-				memcpy(newCmd,tempCmd,sizeof(*tempCmd));
-				if(usartBuff->first == NULL){
-					usartBuff->first = usartBuff->last = newCmd;
-				}else{
-					usartBuff->last->next = newCmd;
-					usartBuff->last->prev = usartBuff->last;
-					usartBuff->last = newCmd;
-				}
-				tempCmd->cmd_available = FALSE;
-				tempCmd->id = 0;
-				tempCmd->next = tempCmd->prev = NULL;
-				usartBuff->last->cmd_available = TRUE;
-				usartBuff->nb_Cmd++;
-		}
-}
-
-void freeUsartBuff(Buff_t *buff){
-	if(buff->first->next != NULL){
-	  buff->first = buff->first->next;
-		free(buff->first->prev);
-		buff->first->prev = NULL;			
-	}else{
-		free(buff->first);
-		buff->first = NULL;
-		buff->last = NULL;
-	}
-	buff->nb_Cmd--;
-}
-
-void taskUsart1Handler(void){
-	while(_usart1Buff.nb_Cmd > 0){
-			if(_usart1Buff.first->cmd_available == TRUE){
-				
-				//Traitement buffer
-				usartSendString(USART2, _usart1Buff.first->data);
-				
-				
-				//Libération mémoire
-				freeUsartBuff(&_usart1Buff);
-			}
-	}
-	allocateUsartBuff(_usart1Cmd, &_usart1Buff);
-		
-}
-
-void taskUsart2Handler(void){
-	while(_usart2Buff.nb_Cmd > 0){
-			if(_usart2Buff.first->cmd_available == TRUE){
-				
-				//Traitement buffer
-				usartSendString(USART1, _usart2Buff.first->data);
-				
-				
-				freeUsartBuff(&_usart2Buff);
-			}
-		}
-	allocateUsartBuff(_usart2Cmd, &_usart2Buff);
-}
-
-
 BOOL sendAtCmd(char *at){
 	uint8_t cpt = 3;
 	char *rep;
 	do{
 		usartSendString(USART2, at);
-		while(usartGetString(_usart2Cmd, &_usart2Buff,rep) == TRUE){
+		while(usartGetString(&_wifiBuff,rep) == TRUE){
 			usartSendString(USART1, rep);
 			if(strncpy(rep, "OK", 2)){
 				return(TRUE);				

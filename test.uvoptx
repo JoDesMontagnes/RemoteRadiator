@@ -170,18 +170,31 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
+<<<<<<< HEAD
           <LineNumber>273</LineNumber>
           <EnabledFlag>1</EnabledFlag>
           <Address>0</Address>
+=======
+          <LineNumber>199</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>134221574</Address>
+>>>>>>> console
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
+<<<<<<< HEAD
           <BreakIfRCount>0</BreakIfRCount>
           <Filename>.\main.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression></Expression>
+=======
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>.\main.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\test\main.c\199</Expression>
+>>>>>>> console
         </Bp>
       </Breakpoint>
       <WatchWindow1>
@@ -219,13 +232,25 @@
           <count>6</count>
           <WinNumber>1</WinNumber>
           <ItemText>buff</ItemText>
+<<<<<<< HEAD
+=======
+        </Ww>
+        <Ww>
+          <count>7</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>resp</ItemText>
+>>>>>>> console
         </Ww>
       </WatchWindow1>
       <MemoryWindow1>
         <Mm>
           <WinNumber>1</WinNumber>
           <SubType>0</SubType>
+<<<<<<< HEAD
           <ItemText>0x2000001</ItemText>
+=======
+          <ItemText>0</ItemText>
+>>>>>>> console
           <AccSizeX>0</AccSizeX>
         </Mm>
       </MemoryWindow1>
@@ -235,7 +260,7 @@
       <DebugFlag>
         <trace>0</trace>
         <periodic>1</periodic>
-        <aLwin>1</aLwin>
+        <aLwin>0</aLwin>
         <aCover>0</aCover>
         <aSer1>0</aSer1>
         <aSer2>0</aSer2>
@@ -248,7 +273,7 @@
         <AscS2>0</AscS2>
         <AscS3>0</AscS3>
         <aSer3>0</aSer3>
-        <eProf>0</eProf>
+        <eProf>1</eProf>
         <aLa>0</aLa>
         <aPa1>0</aPa1>
         <AscS4>0</AscS4>
