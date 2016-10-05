@@ -4,5 +4,9 @@
 -I C:\Keil_v5\ARM\PACK\ARM\CMSIS\4.5.0\CMSIS\Include
 -I C:\Keil_v5\ARM\PACK\Keil\STM32F1xx_DFP\2.0.0\Device\Include
 -I C:\Keil_v5\ARM\PACK\Keil\STM32F1xx_DFP\2.0.0\Device\StdPeriph_Driver\inc
+<<<<<<< HEAD
+=======
+-I C:\Keil_v5\ARM\PACK\Keil\STM32F1xx_DFP\2.0.0\RTE_Driver
+>>>>>>> parent of 8a8057d... Untrack Object files and Listings file
 -D__UVISION_VERSION="517" -D_RTE_ -DSTM32F10X_MD
 -o .\objects\misc.o --omf_browse .\objects\misc.crf --depend .\objects\misc.d --feedback ".\Objects\RemoteRadiator.fed" "C:\Keil_v5\ARM\PACK\Keil\STM32F1xx_DFP\2.0.0\Device\StdPeriph_Driver\src\misc.c"
