@@ -481,10 +481,10 @@ o -IC:\Users\jordan\Documents\GitHub\RemoteRadiator\RTE -IC:\Users\jordan\Docum
 ents\GitHub\RemoteRadiator\RTE\Device\STM32F103C8 -IC:\Keil_v5\ARM\PACK\ARM\CMS
 IS\4.5.0\CMSIS\Include -IC:\Keil_v5\ARM\PACK\Keil\STM32F1xx_DFP\2.0.0\Device\In
 clude -IC:\Keil_v5\ARM\PACK\Keil\STM32F1xx_DFP\2.0.0\Device\StdPeriph_Driver\in
-c -IC:\Keil_v5\ARM\PACK\Keil\STM32F1xx_DFP\2.0.0\RTE_Driver --predefine="__EVAL
- SETA 1" --predefine="__UVISION_VERSION SETA 517" --predefine="_RTE_ SETA 1" --
-predefine="STM32F10X_MD SETA 1" --predefine="STM32F10X_MD SETA 1" --list=.\list
-ings\startup_stm32f10x_md.lst RTE\Device\STM32F103C8\startup_stm32f10x_md.s
+c --predefine="__EVAL SETA 1" --predefine="__UVISION_VERSION SETA 517" --predef
+ine="_RTE_ SETA 1" --predefine="STM32F10X_MD SETA 1" --predefine="STM32F10X_MD 
+SETA 1" --list=.\listings\startup_stm32f10x_md.lst RTE\Device\STM32F103C8\start
+up_stm32f10x_md.s
 
 
 

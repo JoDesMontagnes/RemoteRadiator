@@ -1,13 +1,5 @@
-;#<FEEDBACK># ARM Linker, 5060061: Last Updated: Wed Oct 05 18:27:48 2016
+;#<FEEDBACK># ARM Linker, 5060061: Last Updated: Wed Oct 05 21:16:51 2016
 ;VERSION 0.2
-;FILE gpio_stm32f10x.o
-GPIO_AFConfigure <= USED 0
-GPIO_GetPortClockState <= USED 0
-GPIO_PinConfigure <= USED 0
-GPIO_PortClock <= USED 0
-__asm___16_GPIO_STM32F10x_c_7565b535____REV16 <= USED 0
-__asm___16_GPIO_STM32F10x_c_7565b535____REVSH <= USED 0
-__asm___16_GPIO_STM32F10x_c_7565b535____RRX <= USED 0
 ;FILE main.o
 __asm___6_main_c_main____REV16 <= USED 0
 __asm___6_main_c_main____REVSH <= USED 0
