@@ -13,24 +13,18 @@ alors qu'on ne fait que 2 getString et on envoit que deux "salut"
 	#define HSE_VALUE 8000000
 #endif
 
-#define MAX_USART_BUFF 100
+#define MAX_USART_BUFF 256
 //====================================================================
 typedef enum {FALSE, TRUE}BOOL;
 
-typedef struct CMD_T{
-	int lenght;
-	int id;
-	BOOL cmd_available;
+typedef struct{
+	BOOL full;
 	char data[MAX_USART_BUFF];
-  struct CMD_T *next;
-	struct CMD_T *prev;
-}Cmd_t;
-
-typedef struct BUFF_T{
 	int nb_Cmd;
-	Cmd_t *first;
-	Cmd_t *last;
+	int id_read;
+	int id_write;
 }Buff_t;
+
 
 //====================================================================
 void initSystem(void);
@@ -39,48 +33,37 @@ void initUSART1(void);
 void initUSART2(void);
 void delay(volatile uint32_t ms);
 
-Cmd_t* createCmdStruct(Cmd_t* prev);
-void allocateUsartBuff(Cmd_t* tempCmd, Buff_t *usartBuff);
-void taskUsart1Handler(void);
-void taskUsart2Handler(void);
-void freeUsartBuff(Buff_t *buff);
 
 void usartSendChar(USART_TypeDef *usart, char c);
 void usartSendString(USART_TypeDef *usart, char *s);
 void usartSendUint32(USART_TypeDef *usart, uint32_t data);
-BOOL usartGetString(Cmd_t* cmd, Buff_t *buff, char *temp);
+BOOL usartGetString(Buff_t* buff, char resp[MAX_USART_BUFF]);
 
 //=====================================================================
 
 
- static Buff_t _usart1Buff, _usart2Buff;
- Cmd_t *_usart1Cmd, *_usart2Cmd;
+ Buff_t _wifiBuff, _consolBuff;
  static volatile uint32_t TimingDelay;
 
 int main(void){
-	char *recep;
+	char recep[MAX_USART_BUFF];
 	initSystem();
 	initApp();
 	initUSART1();
 	initUSART2();
 	
-	
-	usartSendString(USART1, "Configuration du module wifi:\r\n");
-	usartGetString(_usart1Cmd, &_usart1Buff, recep);
-	usartSendString(USART1, "Done\r\n");
-	usartSendString(USART2, "AT+CWMODE_CUR=2\r\n");
-	
-	usartSendString(USART2, "AT+CWSAP=\"ESP8266\", \"1234567890\",6,3,1,0");
-	
-	usartSendString(USART2, "AT+CWDHCP_CUR=3\r\n");
-
-	usartSendString(USART2, "AT+CIPAP_CUR?\r\n");
-	
-	
+	usartSendString(USART1, "Config ok\r\n");
 	while(1){
-		taskUsart1Handler();
-		taskUsart2Handler();
-}
+		usartGetString(&_consolBuff, recep);
+		usartSendString(USART1, recep);
+		if(_consolBuff.full == TRUE){
+			usartSendString(USART1, "Buffer Full \r\n");
+			_consolBuff.full = FALSE;
+			_consolBuff.id_read = 0;
+			_consolBuff.id_write = 0;
+			_consolBuff.nb_Cmd = 0;
+		}
+	}
 	
 	
 	return(0);
@@ -106,14 +89,12 @@ void initSystem(void){
 }
 
 void initApp(void){
-	_usart1Buff.nb_Cmd = 0;
-	_usart1Buff.last = _usart1Buff.first = NULL;
-	_usart1Cmd = createCmdStruct(NULL);
+	_wifiBuff.full = FALSE;
+	_wifiBuff.id_read = _wifiBuff.id_write = _wifiBuff.nb_Cmd = 0 ;
 
 	
-	_usart2Buff.nb_Cmd = 0;
-	_usart2Buff.last = _usart2Buff.first = NULL;
-	_usart2Cmd = createCmdStruct(NULL);
+	_consolBuff.full = FALSE;
+	_consolBuff.id_read = _consolBuff.id_write = _consolBuff.nb_Cmd = 0 ;
 }
 
 void initUSART1(void){
@@ -208,33 +189,53 @@ void  usartSendUint32(USART_TypeDef *usart, uint32_t data){
 	usartSendString(usart, buffer);
 }
 
-BOOL usartGetString(Cmd_t* cmd, Buff_t *buff, char *temp){
-	BOOL ok = TRUE;
-	TimingDelay = 10;
+BOOL usartGetString(Buff_t *buff, char resp[MAX_USART_BUFF]){
+		unsigned int size ;
+	
+	TimingDelay = 1000;
 	SysTick_Config(SystemCoreClock/100);
 	while(buff->nb_Cmd <= 0){
-		allocateUsartBuff(cmd,buff);
 		if( TimingDelay == 0){
+			resp[0]= '\0'; //Retourne chaine vide
 			return(FALSE);
 		}
 	}
+	//Vérification retour au début
+  size = strlen(&buff->data[buff->id_read]) + 1;
+	if(size+buff->id_read == MAX_USART_BUFF){
+		strncpy(resp, &buff->data[buff->id_read], size);
+		buff->id_read = 0;
+		size = strlen(&buff->data[buff->id_read]) + 1;
+		strncat(resp,&buff->data[buff->id_read], size);
+	}else{
+		strncpy(resp, &buff->data[buff->id_read], size);
+	}
 	
-	temp = malloc(sizeof( *buff->first->data)*strlen( buff->first->data));
-	strcpy(temp, buff->first->data);
-	freeUsartBuff(buff);
+	buff->nb_Cmd--;
+	buff->id_read+=size;
 	return(TRUE);
 }
 
 void USART1_IRQHandler(void){
 	if(USART_GetITStatus(USART1, USART_IT_RXNE) == SET){
-		
-		//Save char in the buffer
-		_usart1Cmd->data[_usart1Cmd->id] = USART_ReceiveData(USART1);
-		if(_usart1Cmd->data[_usart1Cmd->id] == '\n'){
-			_usart1Cmd->data[_usart1Cmd->id+1] = '\0';
-			_usart1Cmd->cmd_available = TRUE;
+		//retour au début si arrivé message
+		if(_consolBuff.id_write >= MAX_USART_BUFF-1){
+			_consolBuff.id_write = 0;
 		}
-		_usart1Cmd->id++;
+		
+		if(_consolBuff.id_write >= _consolBuff.id_read || _consolBuff.id_write+2 < _consolBuff.id_read){
+			_consolBuff.full = FALSE;
+			_consolBuff.data[_consolBuff.id_write] = USART_ReceiveData(USART1);
+			if(_consolBuff.data[_consolBuff.id_write] == '\n'){
+				_consolBuff.id_write++;
+				_consolBuff.data[_consolBuff.id_write] = '\0';
+				_consolBuff.nb_Cmd++;
+			}
+			_consolBuff.id_write++;
+		}else{
+			_consolBuff.full = TRUE;
+		}
+		
 		
 		USART_ClearITPendingBit(USART1, USART_IT_RXNE);
 	}
@@ -242,12 +243,7 @@ void USART1_IRQHandler(void){
 
 void USART2_IRQHandler(void){
 	if(USART_GetITStatus(USART2, USART_IT_RXNE) == SET){
-		_usart2Cmd->data[_usart2Cmd->id] = USART_ReceiveData(USART2);
-		if(_usart2Cmd->data[_usart2Cmd->id] == '\n'){
-			_usart2Cmd->data[_usart2Cmd->id+1] = '\0';
-			_usart2Cmd->cmd_available = TRUE;
-		}
-		_usart2Cmd->id++;
+		
 		USART_ClearITPendingBit(USART2, USART_IT_RXNE);
 	}
 	
@@ -269,75 +265,6 @@ void delay(volatile uint32_t ms){
 }
 
 	
-Cmd_t* createCmdStruct(Cmd_t* prev){
-	Cmd_t* temp = malloc(sizeof(Cmd_t));
-	temp->id = 0;
-	temp->cmd_available = FALSE;
-	temp->lenght = 0;
-	temp->next = NULL;
-	temp->prev = prev;
-	return(temp);
-}
 
-void allocateUsartBuff(Cmd_t* tempCmd, Buff_t *usartBuff){
-		
-		if(tempCmd->cmd_available == TRUE){
-				Cmd_t *newCmd = createCmdStruct(NULL);
-				memcpy(newCmd,tempCmd,sizeof(*tempCmd));
-				if(usartBuff->first == NULL){
-					usartBuff->first = usartBuff->last = newCmd;
-				}else{
-					usartBuff->last->next = newCmd;
-					usartBuff->last->prev = usartBuff->last;
-					usartBuff->last = newCmd;
-				}
-				tempCmd->cmd_available = FALSE;
-				tempCmd->id = 0;
-				tempCmd->next = tempCmd->prev = NULL;
-				usartBuff->last->cmd_available = TRUE;
-				usartBuff->nb_Cmd++;
-		}
-}
 
-void freeUsartBuff(Buff_t *buff){
-	if(buff->first->next != NULL){
-	  buff->first = buff->first->next;
-		free(buff->first->prev);
-		buff->first->prev = NULL;			
-	}else{
-		free(buff->first);
-		buff->first = NULL;
-		buff->last = NULL;
-	}
-	buff->nb_Cmd--;
-}
 
-void taskUsart1Handler(void){
-	while(_usart1Buff.nb_Cmd > 0){
-			if(_usart1Buff.first->cmd_available == TRUE){
-				
-				//Traitement buffer
-				usartSendString(USART2, _usart1Buff.first->data);
-				
-				
-				//Libération mémoire
-				freeUsartBuff(&_usart1Buff);
-			}
-	}
-	allocateUsartBuff(_usart1Cmd, &_usart1Buff);
-		
-}
-
-void taskUsart2Handler(void){
-	while(_usart2Buff.nb_Cmd > 0){
-			if(_usart2Buff.first->cmd_available == TRUE){
-				
-				//Traitement buffer
-				usartSendString(USART1, _usart2Buff.first->data);
-				
-				
-				freeUsartBuff(&_usart2Buff);
-			}
-		}
-	allocateUsartBuff(_usart2Cmd, &_usart2Buff);
-}
