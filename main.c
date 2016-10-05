@@ -27,6 +27,7 @@ typedef struct{
 
 
 //====================================================================
+//Systeme
 void initSystem(void);
 void initApp(void);
 void initUSART1(void);
@@ -34,10 +35,15 @@ void initUSART2(void);
 void delay(volatile uint32_t ms);
 void addCharToBuffer(Buff_t *buff, USART_TypeDef *usart);
 
+
 void usartSendChar(USART_TypeDef *usart, char c);
 void usartSendString(USART_TypeDef *usart, char *s);
 void usartSendUint32(USART_TypeDef *usart, uint32_t data);
 BOOL usartGetString(Buff_t* buff, char resp[MAX_USART_BUFF]);
+
+
+//ESP8266
+BOOL sendAtCmd(char *at);
 
 //=====================================================================
 
@@ -52,11 +58,27 @@ int main(void){
 	initUSART1();
 	initUSART2();
 	
-	usartSendString(USART1, "Config ok\r\n");
+	
+	usartSendString(USART1, "Configuration du module wifi...");
+	sendAtCmd("AT+RST\r\n");
+	sendAtCmd("ATE0\r\n");
+	sendAtCmd("AT+CWMODE_CUR=2\r\n");
+	sendAtCmd( "AT+CWSAP=\"ESP8266\",\"1234567890\",6,3,1,0\r\n");
+	sendAtCmd( "AT+CWDHCP_CUR=2,1\r\n");
+	sendAtCmd( "AT+CIPAP_CUR?\r\n");
+	
+	usartSendString(USART1, "OK\r\n");
+	
 	while(1){
-		usartGetString(&_consolBuff, recep);
-		usartSendString(USART1, recep);
+		if(usartGetString(&_consolBuff, recep) == TRUE)
+			usartSendString(USART2, recep);
 		
+		if(usartGetString(&_wifiBuff, recep) == TRUE)
+			usartSendString(USART1, recep);
+		
+		if(_consolBuff.full == TRUE){
+			_consolBuff.nb_Cmd++;
+		}
 	}
 	
 	
@@ -183,11 +205,11 @@ void  usartSendUint32(USART_TypeDef *usart, uint32_t data){
 	usartSendString(usart, buffer);
 }
 
+
 BOOL usartGetString(Buff_t *buff, char resp[MAX_USART_BUFF]){
-		unsigned int size ;
-	
+	unsigned int size ;
 	TimingDelay = 1000;
-	SysTick_Config(SystemCoreClock/100);
+	SysTick_Config(SystemCoreClock/1000);
 	while(buff->nb_Cmd <= 0){
 		if( TimingDelay == 0){
 			resp[0]= '\0'; //Retourne chaine vide
@@ -226,11 +248,7 @@ void USART2_IRQHandler(void){
 }
 
 void addCharToBuffer(Buff_t *buff, USART_TypeDef *usart){
-	  if(buff->full == TRUE && buff->id_read != buff->id_write){
-			buff->full = FALSE;
-		}
-		
-	  if(buff->id_write >= MAX_USART_BUFF-1){
+	if(buff->id_write >= MAX_USART_BUFF-1){
 			buff->id_write = 0;
 		}
 		
@@ -245,10 +263,6 @@ void addCharToBuffer(Buff_t *buff, USART_TypeDef *usart){
 			buff->id_write++;
 		}else{
 			buff->full = TRUE;
-			buff->data[buff->id_write] = '\0';
-			//On force la lecture pour vider
-			if(buff->nb_Cmd == 0)
-				buff->nb_Cmd = 1;
 		}
 }
 
@@ -267,7 +281,24 @@ void delay(volatile uint32_t ms){
 	while(TimingDelay != 0);
 }
 
-	
-
-
-
+BOOL sendAtCmd(char *at){
+	uint8_t cpt = 3;
+	char rep[MAX_USART_BUFF];
+	do{
+		usartSendString(USART1, at);
+		usartSendString(USART1, " : ");
+		usartSendString(USART2, at);
+		while(usartGetString(&_wifiBuff,rep) == TRUE){
+			usartSendString(USART1, rep);
+			if(strncmp(rep, "OK", 2) == 0){
+				return(TRUE);				
+			}else if (strncmp(rep, "ERROR", 2) == 0){
+				delay(10);
+				sendAtCmd("AT\r\n");
+			  break;
+			}
+		}
+		cpt--;
+	}while(cpt > 0);
+	return(FALSE);				
+}
