@@ -52,7 +52,17 @@ int main(void){
 	initUSART1();
 	initUSART2();
 	
-	usartSendString(USART1, "Config ok\r\n");
+	usartSendString(USART1, "Configuration du module wifi...");
+	sendAtCmd("AT+RST\r\n");
+	sendAtCmd("ATE0\r\n");
+	sendAtCmd("AT+CWMODE_CUR=2\r\n");
+	sendAtCmd( "AT+CWSAP=\"ESP8266\",\"1234567890\",6,3,1,0\r\n");
+	sendAtCmd( "AT+CWDHCP_CUR=2,1\r\n");
+	sendAtCmd( "AT+CIPAP_CUR?\r\n");
+	
+	usartSendString(USART1, "OK\r\n");
+	
+
 	while(1){
 		usartGetString(&_consolBuff, recep);
 		usartSendString(USART1, recep);
