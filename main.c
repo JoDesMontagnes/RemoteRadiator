@@ -60,13 +60,24 @@ int main(void){
 	
 	
 	usartSendString(USART1, "Configuration du module wifi...");
-	sendAtCmd("AT+RST\r\n");
-	sendAtCmd("ATE0\r\n");
-	sendAtCmd("AT+CWMODE_CUR=2\r\n");
-	sendAtCmd( "AT+CWSAP=\"ESP8266\",\"1234567890\",6,3,1,0\r\n");
-	sendAtCmd( "AT+CWDHCP_CUR=2,1\r\n");
-	sendAtCmd( "AT+CIPAP_CUR?\r\n");
 	
+	//Reset du module
+	sendAtCmd("AT+RST\r\n");
+	//Supprime l'echo
+	sendAtCmd("ATE0\r\n");
+	//Wifi en mode station
+	sendAtCmd("AT+CWMODE_CUR=2\r\n");
+	//Config du point d'acces
+	sendAtCmd( "AT+CWSAP=\"ESP8266\",\"1234567890\",6,3,1,0\r\n");
+	//Active le DHCP. Ne marche pas ?
+	sendAtCmd( "AT+CWDHCP_CUR=2,1\r\n");
+	//multiple connexion
+	sendAtCmd("AT+CIPMUX=1\r\n");
+	//Creation du server TCP
+	sendAtCmd( "AT+CIPSERVER=1,8452\r\n");
+	//Demande l'Ip
+	sendAtCmd( "AT+CIPAP_CUR?\r\n");
+	sendAtCmd( "AT+CIPSTATUS\r\n");
 	usartSendString(USART1, "OK\r\n");
 	
 	while(1){
