@@ -50,19 +50,22 @@ BOOL sendAtCmd(char *at);
 
  Buff_t _wifiBuff, _consolBuff;
  static volatile uint32_t TimingDelay;
+ int temperature[5];
+ char name[10];
 
 int main(void){
 	char recep[MAX_USART_BUFF];
+	char send[MAX_USART_BUFF];
 	initSystem();
 	initApp();
 	initUSART1();
 	initUSART2();
 	
-	
 	usartSendString(USART1, "Configuration du module wifi...");
-	
+
 	//Reset du module
 	sendAtCmd("AT+RST\r\n");
+	delay(2000);
 	//Supprime l'echo
 	sendAtCmd("ATE0\r\n");
 	//Wifi en mode station
@@ -70,7 +73,7 @@ int main(void){
 	//Config du point d'acces
 	sendAtCmd( "AT+CWSAP=\"ESP8266\",\"1234567890\",6,3,1,0\r\n");
 	//Active le DHCP. Ne marche pas ?
-	sendAtCmd( "AT+CWDHCP_CUR=2,1\r\n");
+	//sendAtCmd( "AT+CWDHCP_CUR=2,1\r\n");
 	//multiple connexion
 	sendAtCmd("AT+CIPMUX=1\r\n");
 	//Creation du server TCP
@@ -78,18 +81,46 @@ int main(void){
 	//Demande l'Ip
 	sendAtCmd( "AT+CIPAP_CUR?\r\n");
 	sendAtCmd( "AT+CIPSTATUS\r\n");
+	
 	usartSendString(USART1, "OK\r\n");
 	
 	while(1){
+		
 		if(usartGetString(&_consolBuff, recep) == TRUE)
 			usartSendString(USART2, recep);
 		
-		if(usartGetString(&_wifiBuff, recep) == TRUE)
+		if(usartGetString(&_wifiBuff, recep) == TRUE){
+
 			usartSendString(USART1, recep);
+			if( (strncmp("0,CONNECT", recep, 9)) == 0){
+				sendAtCmd("AT+CIPSEND=0,1\r\n");
+				sendAtCmd("name\r\n");
+			}else if((strncmp("+IPD",recep,4)) == 0){
+				int id = recep[5]-'0';
+				char *cmd = &recep[5];
+				while(*cmd != ':')
+					cmd++;
+				cmd++;
+				if((strncmp("TEMP=",cmd,5))==0){
+					int temp = atoi(&cmd[5]);
+					usartSendString(USART1, "LA temperature recu est : ");
+					usartSendUint32(USART1, temp);
+					usartSendString(USART1, "\r\n");
+				}else if((strncmp("NAME=",cmd,5)) == 0){
+					strcpy(name,&cmd[5]);
+					usartSendString(USART1, "L'objet s'appel : ");
+					usartSendString(USART1, name);
+				}
+			}
+				
+			
+		}
+			
 		
 		if(_consolBuff.full == TRUE){
 			_consolBuff.nb_Cmd++;
 		}
+
 
 	}
 	
