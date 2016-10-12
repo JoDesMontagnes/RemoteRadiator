@@ -1,8 +1,3 @@
-/*
-Probleme : Reception de salut salut salu
-alors qu'on ne fait que 2 getString et on envoit que deux "salut"
-
-*/
 #include "stm32f10x.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +10,10 @@ alors qu'on ne fait que 2 getString et on envoit que deux "salut"
 
 #define MAX_USART_BUFF 256
 //====================================================================
+
+
 typedef enum {FALSE, TRUE}BOOL;
+typedef enum {PROBE, DRIVER, PC}HOST_TYPE;
 
 typedef struct{
 	BOOL full;
@@ -25,6 +23,10 @@ typedef struct{
 	int id_write;
 }Buff_t;
 
+typedef struct{
+	
+	
+}Host_t;
 
 //====================================================================
 //Systeme
@@ -86,13 +88,17 @@ int main(void){
 	
 	while(1){
 		
-		if(usartGetString(&_consolBuff, recep) == TRUE)
+		if(usartGetString(&_consolBuff, recep) == TRUE){
 			usartSendString(USART2, recep);
+		}
 		
 		if(usartGetString(&_wifiBuff, recep) == TRUE){
 
 			usartSendString(USART1, recep);
 			if( (strncmp("0,CONNECT", recep, 9)) == 0){
+				sendAtCmd("AT+CIPSEND=0,1\r\n");
+				sendAtCmd("name\r\n");
+			}else if( (strncmp("0,CONNECT", recep, 9)) == 0){
 				sendAtCmd("AT+CIPSEND=0,1\r\n");
 				sendAtCmd("name\r\n");
 			}else if((strncmp("+IPD",recep,4)) == 0){
@@ -101,12 +107,12 @@ int main(void){
 				while(*cmd != ':')
 					cmd++;
 				cmd++;
-				if((strncmp("TEMP=",cmd,5))==0){
+				if((strncmp("temp=",cmd,5))==0){
 					int temp = atoi(&cmd[5]);
-					usartSendString(USART1, "LA temperature recu est : ");
+					usartSendString(USART1, "La temperature recu est : ");
 					usartSendUint32(USART1, temp);
 					usartSendString(USART1, "\r\n");
-				}else if((strncmp("NAME=",cmd,5)) == 0){
+				}else if((strncmp("name=",cmd,5)) == 0){
 					strcpy(name,&cmd[5]);
 					usartSendString(USART1, "L'objet s'appel : ");
 					usartSendString(USART1, name);
