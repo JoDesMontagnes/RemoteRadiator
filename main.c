@@ -9,11 +9,13 @@
 #endif
 
 #define MAX_USART_BUFF 256
+#define MAX_HOST_NAME_LENGTH 50
 //====================================================================
 
 
 typedef enum {FALSE, TRUE}BOOL;
 typedef enum {PROBE, DRIVER, PC}HOST_TYPE;
+typedef enum {VOID, HOST_CMD_NAME, HOST_CMD_TEMP}HOST_CMD;
 
 typedef struct{
 	BOOL full;
@@ -26,8 +28,11 @@ typedef struct{
 typedef struct{
 	int id;
 	HOST_TYPE type;
-	char *name[50];
+	char name[MAX_HOST_NAME_LENGTH];
+	HOST_CMD next_cmd;
 }Host_t;
+
+const char * hostCmdList[] = {"", "name", "temp"};
 
 //====================================================================
 //Systeme
