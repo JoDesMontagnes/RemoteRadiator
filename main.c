@@ -24,8 +24,9 @@ typedef struct{
 }Buff_t;
 
 typedef struct{
-	
-	
+	int id;
+	HOST_TYPE type;
+	char *name[50];
 }Host_t;
 
 //====================================================================
