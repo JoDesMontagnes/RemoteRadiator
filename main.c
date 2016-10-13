@@ -368,7 +368,7 @@ void wifiSenderTask(void){
 
 void wifiReceiverTask(void){
 	char recep[MAX_USART_BUFF];
-	int id;
+	int tcp_id;
 	
 	if(usartGetString(&_wifiBuff, recep) == TRUE){
 
@@ -377,28 +377,38 @@ void wifiReceiverTask(void){
 		if( (strncmp(TCP_CONNEXION_CMD_OCCURE, &recep[2], 7)) == 0){
 			//Host connecté
 			
-			id =  recep[0]-'0';
-			_hostList[id].next_cmd = HOST_CMD_ID;
+			tcp_id =  recep[0]-'0';
+			_hostList[tcp_id].next_cmd = HOST_CMD_ID;
 			_nbCmdToSend++;
 		}else if((strncmp(TCP_DATA_CMD_OCCURE,recep,4)) == 0){
 			//Données tcp dispo
 			char *cmd = &recep[5];
-			
-			id = recep[5]-'0';
+			//On se met en position pour récupérer les données utiles
+			tcp_id = recep[5]-'0';
 			while(*cmd != ':')
 			cmd++;
 			cmd++;
 			//Traitement des données
-			if((strncmp(hostCmdList[HOST_CMD_TEMP],cmd,4))==0){
+			
+
+		  if((strncmp(hostCmdList[HOST_CMD_ID],cmd,2)) == 0){
+				//Récupération de l'ID du périphérique
+				_hostList[tcp_id].id = atoi(&cmd[4]);
+				_hostList[tcp_id].next_cmd = HOST_CMD_FRIEND;
+				_nbCmdToSend++;
+			}else if((strncmp(hostCmdList[HOST_CMD_FRIEND],cmd,6)) == 0){
+				//Récupération de l'ID du périphérique associé
+				_hostList[tcp_id].id_friend = atoi(&cmd[8]);
+				_hostList[tcp_id].next_cmd = HOST_CMD_TEMP;
+				_nbCmdToSend++;
+			}else if((strncmp(hostCmdList[HOST_CMD_TEMP],cmd,4))==0){
 				
 				//Enregistrement des données dans la mémoire
 				int temp = atoi(&cmd[5]);
 				
-
-			}else if((strncmp(hostCmdList[HOST_CMD_ID],cmd,4)) == 0){
-				_hostList[id].next_cmd = HOST_CMD_FRIEND;
-				_nbCmdToSend++;
 			}
+				
+			
 		}	
 	}
 }
