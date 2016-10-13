@@ -10,12 +10,16 @@
 
 #define MAX_USART_BUFF 256
 #define MAX_HOST_NAME_LENGTH 50
+#define UNDEFINED_ID -1
+#define	NA_ID	-2
+#define TCP_CONNEXION_CMD_OCCURE "CONNECT"
+#define TCP_DATA_CMD_OCCURE "+IPD"
 //====================================================================
 
 
 typedef enum {FALSE, TRUE}BOOL;
 typedef enum {HOST_TYPE_UNKNOWN, HOST_TYPE_PROBE, HOST_TYPE_DRIVER, HOST_TYPE_PC}HOST_TYPE;
-typedef enum {HOST_CMD_VOID, HOST_CMD_NAME, HOST_CMD_TEMP}HOST_CMD;
+typedef enum {HOST_CMD_VOID, HOST_CMD_ID, HOST_CMD_FRIEND, HOST_CMD_TEMP}HOST_CMD;
 
 typedef struct{
 	BOOL full;
@@ -27,11 +31,12 @@ typedef struct{
 
 typedef struct{
 	HOST_TYPE type;
-	char name[MAX_HOST_NAME_LENGTH];
+	int id;
+	int id_friend; //Uniquement pour PROBE et DRIVER
 	HOST_CMD next_cmd;
 }Host_t;
 
-const char *hostCmdList[] = {"", "name", "temp"};
+const char *hostCmdList[] = {"", "EXIT", "ID", "FRIEND", "TEMP"};
 
 //====================================================================
 //Systeme
@@ -53,23 +58,32 @@ BOOL usartGetString(Buff_t* buff, char resp[MAX_USART_BUFF]);
 //ESP8266
 BOOL sendAtCmd(char *at);
 
+//APP
+void consoleTask(void);
+void wifiReceiverTask(void);
+void wifiSenderTask(void);
+
 //=====================================================================
 
-
- Buff_t _wifiBuff = {FALSE,"",0,0,0}, _consolBuff= {FALSE,"",0,0,0};
- //Utilisé pour faire des temporisations avec  Systick
- static volatile uint32_t TimingDelay;
- Host_t _hostList[5] = {
-	{ HOST_TYPE_UNKNOWN, "", HOST_CMD_VOID},
-	{ HOST_TYPE_UNKNOWN, "", HOST_CMD_VOID},
-	{ HOST_TYPE_UNKNOWN, "", HOST_CMD_VOID},
-	{ HOST_TYPE_UNKNOWN, "", HOST_CMD_VOID},
-	{ HOST_TYPE_UNKNOWN, "", HOST_CMD_VOID}
+//Buffer de récèption des UART
+static Buff_t _wifiBuff = {FALSE,"",0,0,0}, _consolBuff= {FALSE,"",0,0,0};
+//Utilisé pour faire des temporisations avec  Systick
+static volatile uint32_t TimingDelay;
+Host_t _hostList[5] = {
+	{ HOST_TYPE_UNKNOWN, UNDEFINED_ID, HOST_CMD_VOID},
+	{ HOST_TYPE_UNKNOWN, UNDEFINED_ID, HOST_CMD_VOID},
+	{ HOST_TYPE_UNKNOWN, UNDEFINED_ID, HOST_CMD_VOID},
+	{ HOST_TYPE_UNKNOWN, UNDEFINED_ID, HOST_CMD_VOID},
+	{ HOST_TYPE_UNKNOWN, UNDEFINED_ID, HOST_CMD_VOID}
  };
+static int _nbCmdToSend = 0;
 
 int main(void){
-	char recep[MAX_USART_BUFF];
-	int nbCmd = 0;
+	//====== Déclaration des variables ==============
+
+
+	
+	//====== Initialisation ==============
 	initSystem();
 	initUSART1();
 	initUSART2();
@@ -78,75 +92,13 @@ int main(void){
 	initWifi();
 	usartSendString(USART1, "OK\r\n");
 	
+	//====== setup ==============
 	while(1){
-		
-		if(usartGetString(&_consolBuff, recep) == TRUE){
-			usartSendString(USART2, recep);
-		}
-		
-		if(usartGetString(&_wifiBuff, recep) == TRUE){
-
-			usartSendString(USART1, recep);
-			if( (strncmp("0,CONNECT", recep, 9)) == 0){
-				_hostList[0].next_cmd = HOST_CMD_NAME;
-				nbCmd++;
-			}else if( (strncmp("0,CONNECT", recep, 9)) == 0){
-				sendAtCmd("AT+CIPSEND=0,1\r\n");
-				sendAtCmd("name\r\n");
-			}else if((strncmp("+IPD",recep,4)) == 0){
-				
-				int id = recep[5]-'0';
-				char *cmd = &recep[5];
-				while(*cmd != ':')
-					cmd++;
-				cmd++;
-				
-				
-				if((strncmp(hostCmdList[HOST_CMD_TEMP],cmd,4))==0){
-					int temp = atoi(&cmd[5]);
-					usartSendString(USART1, "La temperature recu est : ");
-					usartSendUint32(USART1, temp);
-					usartSendString(USART1, "\r\n");
-					
-				}else if((strncmp(hostCmdList[HOST_CMD_NAME],cmd,4)) == 0){
-					strcpy(_hostList[id].name,&cmd[5]);
-					usartSendString(USART1, "Le peripherique s'appel : ");
-					usartSendString(USART1, _hostList[id].name);
-					_hostList[id].next_cmd = HOST_CMD_TEMP;
-					nbCmd++;
-				}
-			}	
-		}
-		
-		
-		
-		
-		if(_consolBuff.full == TRUE){
-			_consolBuff.nb_Cmd++;
-		}
-		
-		if((nbCmd > 0) && (_wifiBuff.nb_Cmd == 0) && (_consolBuff.nb_Cmd == 0)){
-			int i;
-			for(i=0;i<4;i++){
-				if(_hostList[i].next_cmd != HOST_CMD_VOID){
-					usartSendString(USART2, "AT+CIPSEND=");
-					usartSendUint32(USART2, i);
-					usartSendChar(USART2, ',');
-					usartSendUint32(USART2, strlen(hostCmdList[_hostList[i].next_cmd]));
-					sendAtCmd("\r\n");
-					delay(100);
-					sendAtCmd((char *)hostCmdList[_hostList[i].next_cmd]);
-					
-					nbCmd--;
-					_hostList[i].next_cmd = HOST_CMD_VOID;
-				}
-			}
-		}
-
-	}
-	
-	
+		consoleTask();
+		wifiReceiverTask();
+		wifiSenderTask();
 	return(0);
+	}
 }
 
 
@@ -386,3 +338,69 @@ BOOL sendAtCmd(char *at){
 	}while(cpt > 0);
 	return(FALSE);				
 }
+
+void consoleTask(void){
+	char recep[MAX_USART_BUFF];
+	if(usartGetString(&_consolBuff, recep) == TRUE){
+		usartSendString(USART2, recep);
+	}
+}
+
+void wifiSenderTask(void){
+	if((_nbCmdToSend > 0) && (_wifiBuff.nb_Cmd == 0) && (_consolBuff.nb_Cmd == 0)){
+			int i;
+			for(i=0;i<4;i++){
+				if(_hostList[i].next_cmd != HOST_CMD_VOID){
+					usartSendString(USART2, "AT+CIPSEND=");
+					usartSendUint32(USART2, i);
+					usartSendChar(USART2, ',');
+					usartSendUint32(USART2, strlen(hostCmdList[_hostList[i].next_cmd]));
+					sendAtCmd("\r\n");
+					delay(100);
+					sendAtCmd((char *)hostCmdList[_hostList[i].next_cmd]);
+					
+					_nbCmdToSend--;
+					_hostList[i].next_cmd = HOST_CMD_VOID;
+				}
+			}
+		}
+}
+
+void wifiReceiverTask(void){
+	char recep[MAX_USART_BUFF];
+	int id;
+	
+	if(usartGetString(&_wifiBuff, recep) == TRUE){
+
+		usartSendString(USART1, recep);
+	
+		if( (strncmp(TCP_CONNEXION_CMD_OCCURE, &recep[2], 7)) == 0){
+			//Host connecté
+			
+			id =  recep[0]-'0';
+			_hostList[id].next_cmd = HOST_CMD_ID;
+			_nbCmdToSend++;
+		}else if((strncmp(TCP_DATA_CMD_OCCURE,recep,4)) == 0){
+			//Données tcp dispo
+			char *cmd = &recep[5];
+			
+			id = recep[5]-'0';
+			while(*cmd != ':')
+			cmd++;
+			cmd++;
+			//Traitement des données
+			if((strncmp(hostCmdList[HOST_CMD_TEMP],cmd,4))==0){
+				
+				//Enregistrement des données dans la mémoire
+				int temp = atoi(&cmd[5]);
+				
+
+			}else if((strncmp(hostCmdList[HOST_CMD_ID],cmd,4)) == 0){
+				_hostList[id].next_cmd = HOST_CMD_FRIEND;
+				_nbCmdToSend++;
+			}
+		}	
+	}
+}
+
+
