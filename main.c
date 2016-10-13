@@ -13,13 +13,14 @@
 #define UNDEFINED_ID -1
 #define	NA_ID	-2
 #define TCP_CONNEXION_CMD_OCCURE "CONNECT"
+#define TCP_DECONNEXION_CMD_OCCURE "CLOSED"
 #define TCP_DATA_CMD_OCCURE "+IPD"
 //====================================================================
 
 
 typedef enum {FALSE, TRUE}BOOL;
 typedef enum {HOST_TYPE_UNKNOWN, HOST_TYPE_PROBE, HOST_TYPE_DRIVER, HOST_TYPE_PC}HOST_TYPE;
-typedef enum {HOST_CMD_VOID, HOST_CMD_ID, HOST_CMD_FRIEND, HOST_CMD_TEMP}HOST_CMD;
+typedef enum {HOST_CMD_VOID, HOST_CMD_EXIT, HOST_CMD_ID, HOST_CMD_FRIEND, HOST_CMD_TYPE, HOST_CMD_TEMP}HOST_CMD;
 
 typedef struct{
 	BOOL full;
@@ -36,7 +37,7 @@ typedef struct{
 	HOST_CMD next_cmd;
 }Host_t;
 
-const char *hostCmdList[] = {"", "EXIT", "ID", "FRIEND", "TEMP"};
+const char *hostCmdList[] = {"", "EXIT", "ID", "FRIEND", "TYPE", "TEMP"};
 
 //====================================================================
 //Systeme
@@ -70,11 +71,11 @@ static Buff_t _wifiBuff = {FALSE,"",0,0,0}, _consolBuff= {FALSE,"",0,0,0};
 //Utilisé pour faire des temporisations avec  Systick
 static volatile uint32_t TimingDelay;
 Host_t _hostList[5] = {
-	{ HOST_TYPE_UNKNOWN, UNDEFINED_ID, HOST_CMD_VOID},
-	{ HOST_TYPE_UNKNOWN, UNDEFINED_ID, HOST_CMD_VOID},
-	{ HOST_TYPE_UNKNOWN, UNDEFINED_ID, HOST_CMD_VOID},
-	{ HOST_TYPE_UNKNOWN, UNDEFINED_ID, HOST_CMD_VOID},
-	{ HOST_TYPE_UNKNOWN, UNDEFINED_ID, HOST_CMD_VOID}
+	{ HOST_TYPE_UNKNOWN, UNDEFINED_ID, UNDEFINED_ID, HOST_CMD_VOID},
+	{ HOST_TYPE_UNKNOWN, UNDEFINED_ID, UNDEFINED_ID, HOST_CMD_VOID},
+	{ HOST_TYPE_UNKNOWN, UNDEFINED_ID, UNDEFINED_ID, HOST_CMD_VOID},
+	{ HOST_TYPE_UNKNOWN, UNDEFINED_ID, UNDEFINED_ID, HOST_CMD_VOID},
+	{ HOST_TYPE_UNKNOWN, UNDEFINED_ID, UNDEFINED_ID, HOST_CMD_VOID}
  };
 static int _nbCmdToSend = 0;
 
@@ -97,8 +98,8 @@ int main(void){
 		consoleTask();
 		wifiReceiverTask();
 		wifiSenderTask();
-	return(0);
 	}
+	return(0);
 }
 
 
@@ -393,23 +394,34 @@ void wifiReceiverTask(void){
 
 		  if((strncmp(hostCmdList[HOST_CMD_ID],cmd,2)) == 0){
 				//Récupération de l'ID du périphérique
-				_hostList[tcp_id].id = atoi(&cmd[4]);
+				_hostList[tcp_id].id = atoi(&cmd[3]);
 				_hostList[tcp_id].next_cmd = HOST_CMD_FRIEND;
 				_nbCmdToSend++;
 			}else if((strncmp(hostCmdList[HOST_CMD_FRIEND],cmd,6)) == 0){
 				//Récupération de l'ID du périphérique associé
-				_hostList[tcp_id].id_friend = atoi(&cmd[8]);
+				_hostList[tcp_id].id_friend = atoi(&cmd[7]);
+				_hostList[tcp_id].next_cmd = HOST_CMD_TYPE;
+				_nbCmdToSend++;
+			}else if((strncmp(hostCmdList[HOST_CMD_TYPE],cmd,4))==0){
+				
+				//Enregistrement des données dans la mémoire
+				_hostList[tcp_id].type = atoi(&cmd[5]);
 				_hostList[tcp_id].next_cmd = HOST_CMD_TEMP;
 				_nbCmdToSend++;
 			}else if((strncmp(hostCmdList[HOST_CMD_TEMP],cmd,4))==0){
 				
 				//Enregistrement des données dans la mémoire
 				int temp = atoi(&cmd[5]);
-				
+				_hostList[tcp_id].next_cmd = HOST_CMD_EXIT;
+				//Exit du TCP ou attente fermeture je sais pas encore
 			}
-				
-			
-		}	
+		}else if((strncmp(TCP_DECONNEXION_CMD_OCCURE, &recep[2], 6)) == 0){
+			tcp_id =  recep[0]-'0';
+			_hostList[tcp_id].id = UNDEFINED_ID;
+			_hostList[tcp_id].id_friend = UNDEFINED_ID;
+			_hostList[tcp_id].next_cmd = HOST_CMD_VOID;
+			_hostList[tcp_id].type = HOST_TYPE_UNKNOWN;
+		}
 	}
 }
 
